@@ -971,56 +971,68 @@
     "date": "2025-04-04"
   },
   "2025-04-03": {
-    "url": "https://spaffnerds.com/shows/2025-04-03",
+    "date": "2025-04-03",
     "venue": "Soundcheck Studios",
     "city": "Pembroke",
     "state": "MA",
+    "tour": "2025 Spring",
+    "show_number": "11",
+    "rating": "tags:",
+    "chucks_dream": "-",
     "sets": {
-      "Set 1": "Broken Wing > Windmill,, On Fire [ 1 ]",
-      "Set 2": "Fake The Fate > Fire Alarm Jam > Fake The Fate > Motel 6 > Down Under [ 2 ],, Gotta Save Fred > Salamander Song",
-      "Encore": "Frog Gossip"
+      "Set 1": "Broken Wing (29) -> Windmill (22), On Fire (10)",
+      "Set 2": "Fake the Fate (12), Fire Alarm Jam (15) -> Motel 6 (14) -> Down Under (12), Gotta Save Fred (18) -> Salamander Song (9)",
+      "Encore": "Frog Gossip (7)"
     },
     "notes": [
-      "[ 1 ]: JJ Grey & Mofro",
-      "[ 2 ]: Men At Work"
+      "*This was the 11th show of the 2025 Spring Tour, the first night of a three-night run at Soundcheck Studios, and the band's first appearance in Pembroke since 1/14/24 Soundcheck Studios), ending a **115 show gap**. This show featured the first **Fire Alarm Jam** since 10/5/12 (Prescott, AZ), ending an **849 show gap**. **Broken Wing** contained an I Am Hydrogen (Phish) tease from Cory and Brian. **Fake the Fate** contained a **Night After Night** tease from Cory. During **Fake the Fate**, the show was interrupted by the fire alarm. **Fire Alarm Jam** contained a We Are Come to Outlive Our Brains (Phish) tease from Cory. **Motel 6** contained an El Pito (Joe Cuba) tease from Cory, a Trouble You a Trouble Me (Ini Kamoze) tease from Nick, and a **Down Under** tease from Brian.*"
     ],
-    "source": "spaffnerds",
-    "date": "2025-04-03"
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-04-03.md",
+    "url": "https://spaffnerds.com/shows/2025-04-03"
   },
   "2025-03-22": {
-    "url": "https://spaffnerds.com/shows/2025-03-22",
+    "date": "2025-03-22",
     "venue": "Thalia Hall",
     "city": "Chicago",
     "state": "IL",
+    "tour": "2025 Spring",
+    "show_number": "10",
+    "rating": "",
+    "chucks_dream": "rating:",
     "sets": {
-      "Set 1": "Galisteo Way,, Dirtbath,, Mind's Unchained",
-      "Set 2": "Chuck's Dream,, Money For Nothing [ 1 ] > Space Gadget,, Weasel > Palisades > Weasel,, Ain't That Wrong",
-      "Encore": "Back in L.A."
+      "Set 1": "Galisteo Way (18) -> Dirtbath (34), Mind's Unchained (12)",
+      "Set 2": "Money for Nothing (18) -> Space Gadget (4), Weasel (12) -> Palisades (7) > Weasel (10), Ain't That Wrong (20)",
+      "Encore": "Back in L.A. (4)"
     },
     "notes": [
-      "[ 1 ]: Dire Straits"
+      "*This was the 10th show of the 2025 Spring Tour and the band's first appearance in Chicago since 1/27/24 (Thalia Hall), ending a **107 show gap**. **Mind's Unchained** contained several Norwegian Wood teases from Brian. **Money for Nothing**'s lyrics were changed to \"we got smoothies, color TV\" and contained a Life During Wartime (Talking Heads) tease from Cory. The first **Weasel** contained an **Enjoy the Silence** tease from Cory.*"
     ],
-    "source": "spaffnerds",
-    "date": "2025-03-22"
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-03-22.md",
+    "url": "https://spaffnerds.com/shows/2025-03-22"
   },
   "2025-03-21": {
-    "url": "https://spaffnerds.com/shows/2025-03-21",
+    "date": "2025-03-21",
     "venue": "Moontown Brewing Company",
     "city": "Whitestown",
     "state": "IN",
+    "tour": "2025 Spring",
+    "show_number": "9",
+    "rating": "",
+    "chucks_dream": "rating:",
     "sets": {
-      "Set 1": "All My Friends > Bee Jam > Neutrino > Swingtown [ 1 ] > Sweet [ 2 ]",
-      "Set 2": "Chuck's Dream,, War Of Man [ 3 ] > The Postman,, Electric Taco Stand > Alternate Ending > Electric Taco Stand",
-      "Encore": "Kiss Off [ 4 ]"
+      "Set 1": "All My Friends (2) -> Bee Jam (19) -> Neutrino (16), Swingtown (18) -> Sweet (3)",
+      "Chuck's Dream": "Carving Moons",
+      "Set 2": "War of Man (21) -> The Postman (23), Electric Taco Stand (17) -> Alternate Ending (12) -> Electric Taco Stand (8)",
+      "Encore": "Kiss Off (5) > Kiss Off (Reprise) (5)"
     },
     "notes": [
-      "[ 1 ]: Steve Miller Band",
-      "[ 2 ]: Gary Ukura",
-      "[ 3 ]: Neil Young",
-      "[ 4 ]: The Violent Femmes"
+      "*This was the ninth show of the 2025 Spring Tour and the band's first appearance in Whitestown since 1/26/24 (Moontown), ending a **107 show gap**. This show featured the first **War of Man** since 10/26/19 (Denver, CO), ending a **394 show gap**. **Neutrino** contained an Enter Sandman (Metallica) tease from Cory.*"
     ],
-    "source": "spaffnerds",
-    "date": "2025-03-21"
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-03-21.md",
+    "url": "https://spaffnerds.com/shows/2025-03-21"
   },
   "2025-03-20": {
     "date": "2025-03-20",
@@ -1033,6 +1045,7 @@
     "chucks_dream": "rating:",
     "sets": {
       "Set 1": "Smooth, Relax, Down (4), Dream Jam (24) -> Double Time (15), In the Eyes of Thieves (16), The Evil (6)",
+      "Chuck's Dream": "Part of Life Blues",
       "Set 2": "Windmill (38) -> Anyone (14), Gotta Save Fred (9), Run Like Hell (12)",
       "Encore": "The Hard Way (8)"
     },
@@ -1076,6 +1089,7 @@
     "chucks_dream": "rating:",
     "sets": {
       "Set 1": "Night After Night (16), Take Your Mama (5), Red's Jam (18) -> The Waltz (14), Crazy (7)",
+      "Chuck's Dream": "Single File",
       "Set 2": "Shelter in Place (24) -> Darkness Singularity (14), Ginger Stardust (14) -> Fraggle Rock (5) -> Salamander Song (10)",
       "Encore": "I Wouldn't Want to Be Like You (4)"
     },
@@ -15143,7 +15157,7 @@
       "Encore": "To The Nest (9) -> Simple Mysteries (7)"
     },
     "notes": [
-      "*This was the 25th and final show of the 2025 Fall Tour and the band's first appearance in Kalamazoo since 1/24/24 (Bell's), ending a **181 show gap**. This show featured the first **Lucky Man** since 12/9/23 (Ardmore, PA), ending a **192 show gap**. The encore was preceded by crew introductions and thanks and band introductions (each of which featured playing from Cory), a Shave and a Haircut tease from Cory, and a **Simple Mysteries** tease from Cory.*\n\n*So I'll hide myself inside my head*\n*And I'll wrap myself* \n*Inside my blanket*"
+      "*This was the 25th and final show of the 2025 Fall Tour and the band's first appearance in Kalamazoo since 1/24/24 (Bell's), ending a **181 show gap**. This show featured the first **Lucky Man** since 12/9/23 (Ardmore, PA), ending a **192 show gap**. **Galisteo Way** contained a Gotta Jibboo (Phish) tease from Cory and Shon. The encore was preceded by crew introductions and thanks and band introductions (each of which featured playing from Cory), a Shave and a Haircut tease from Cory, and a **Simple Mysteries** tease from Cory.*\n\n*So I'll hide myself inside my head*\n*And I'll wrap myself* \n*Inside my blanket*"
     ],
     "source": "obsidian",
     "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-12-07.md",
