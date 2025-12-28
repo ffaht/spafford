@@ -2831,6 +2831,8 @@ function renderSongDetailTable() {
               show,
               setName: standardizedSetName,
               position: idx,
+              rawSongName: songName,
+              timingMinutes: (() => { const mm = String(songName).match(/\((\d+)\)/); return mm ? parseInt(mm[1],10) : null; })(),
               songBefore: idx > 0 ? songs[idx - 1].replace(/\s*\[\s*\d+[\d:]*\s*\]\s*/g, '') : '-',
               songAfter: idx < songs.length - 1 ? songs[idx + 1].replace(/\s*\[\s*\d+[\d:]*\s*\]\s*/g, '') : '-',
               gap: gap
@@ -2902,18 +2904,102 @@ function renderSongDetailTable() {
   });
   
   // Render each performance
-  performances.forEach(perf => {
-    const jamEntry = jamsForSong.find(j => {
-      const jamDate = j.date;
-      const formattedJamDate = formatDateForDisplay(jamDate);
-      const perfBaseDate = perf.baseDate;
-      
-      return jamDate === perfBaseDate || 
-             formattedJamDate === perfBaseDate ||
-             formatDateForDisplay(perfBaseDate) === jamDate ||
-             formatDateForDisplay(perfBaseDate) === formattedJamDate;
-    });
-    
+    // Precompute how many times this song appears on each date
+  const perfCountByDate = performances.reduce((acc, p) => {
+    const d = (p.baseDate || '').toString().trim();
+    if (!d) return acc;
+    acc[d] = (acc[d] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Per-date pool of jam entries (consumed as we match occurrences so one entry can't apply to multiple repeats)
+  const jamPoolByDate = {};
+
+performances.forEach(perf => {
+    // STRICT JAM MATCHING (prevents duplicates within same show/date)
+    const getJamDbDate = (j) => {
+      const d = (j.dbDate || j.date || '').toString().trim();
+      if (!d) return '';
+      // YYYY-MM-DD
+      if (d.includes('-') && d.split('-')[0].length === 4) return d;
+      // MM-DD-YYYY
+      if (d.includes('-') && d.split('-')[0].length !== 4) {
+        const parts = d.split('-');
+        if (parts.length === 3) {
+          const [mo, da, yr] = parts;
+          return `${yr}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}`;
+        }
+      }
+      // MM/DD/YYYY
+      if (d.includes('/')) {
+        const parts = d.split('/');
+        if (parts.length === 3) {
+          const [mo, da, yr] = parts;
+          return `${yr}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}`;
+        }
+      }
+      return d;
+    };
+
+    const getJamMinutes = (j) => {
+      const t = (j.timing || '').toString();
+      const mm = t.match(/^(\d{1,3})\s*:/);
+      return mm ? parseInt(mm[1], 10) : null;
+    };
+
+    const perfBaseDate = (perf.baseDate || '').toString().trim();
+    const sameDatePerfCount = perfCountByDate[perfBaseDate] || 0;
+    const jamsForDate = jamsForSong.filter(j => getJamDbDate(j) === perfBaseDate);
+
+    // Initialize / reuse the per-date jam pool (so one jam entry cannot be reused across repeats)
+    if (!jamPoolByDate[perfBaseDate]) {
+      jamPoolByDate[perfBaseDate] = jamsForDate.slice();
+    }
+    const pool = jamPoolByDate[perfBaseDate];
+
+    let jamEntry = null;
+
+    const perfMinutes = (typeof perf.timingMinutes === 'number') ? perf.timingMinutes : null;
+
+    if (pool.length > 0) {
+      if (sameDatePerfCount > 1) {
+        // Multiple occurrences on this date: ONLY match by timing minutes, and CONSUME the match.
+        if (perfMinutes != null) {
+          const matchIdx = pool.findIndex(j => getJamMinutes(j) === perfMinutes);
+          if (matchIdx !== -1) {
+            jamEntry = pool[matchIdx];
+            pool.splice(matchIdx, 1);
+          }
+        }
+      } else {
+        // Single occurrence on this date: if multiple jam entries exist, try timing; else take first.
+        if (perfMinutes != null) {
+          const matchIdx = pool.findIndex(j => getJamMinutes(j) === perfMinutes);
+          if (matchIdx !== -1) {
+            jamEntry = pool[matchIdx];
+            pool.splice(matchIdx, 1);
+          } else {
+            jamEntry = pool.shift();
+          }
+        } else {
+          jamEntry = pool.shift();
+        }
+      }
+    }
+
+    if (window.DEBUG_JAM_MATCH && perfBaseDate) {
+      console.log("JamMatchDebug", {
+        song: currentSongDetail?.name,
+        perfBaseDate,
+        perfSetName: perf.setName,
+        perfPosition: perf.position,
+        perfMinutes,
+        sameDatePerfCount,
+        matched: jamEntry ? (jamEntry.timing || null) : null,
+        remainingPool: pool.length
+      });
+    }
+
     const isHighlighted = jamEntry?.highlighted;
     const notes = jamEntry?.notes || '-';
     
