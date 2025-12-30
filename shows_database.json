@@ -954,21 +954,26 @@
     "date": "2025-04-05"
   },
   "2025-04-04": {
-    "url": "https://spaffnerds.com/shows/2025-04-04",
+    "date": "2025-04-04",
     "venue": "Soundcheck Studios",
     "city": "Pembroke",
     "state": "MA",
+    "tour": "2025 Spring",
+    "show_number": "12",
+    "rating": "",
+    "chucks_dream": "rating:",
     "sets": {
-      "Set 1": "Be Strange,, Funkadelic,, Pursuit Of Madness [ 1 ] > Night After Night",
-      "Set 2": "Back in L.A.,, Darkness Singularity,, Plush [ 2 ] > Electric Taco Stand,, Walls",
-      "Encore": "Double Time"
+      "Set 1": "Be Strange (6), Funkadelic (20), Pursuit of Trance (20) -> Night After Night (12)",
+      "Chuck's Dream": "Fleets of Thought",
+      "Set 2": "Back in L.A. (4), Darkness Singularity (14), Plush (17) -> Electric Taco Stand (15), Walls (12)",
+      "Encore": "Double Time (14)"
     },
     "notes": [
-      "[ 1 ]: Trance Version",
-      "[ 2 ]: Stone Temple Pilots"
+      "*This was the 12th show of the 2025 Spring Tour and the second night of a three-night run at Soundcheck Studios. **Pursuit of Trance** contained **High Beams** and **Night After Night** teases from Cory. **Darkness Singularity** contained a Crosseyed and Painless (Talking Heads) tease from Cory. **Plush** contained several full-band **Electric Taco Stand** teases.*"
     ],
-    "source": "spaffnerds",
-    "date": "2025-04-04"
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-04-04.md",
+    "url": "https://spaffnerds.com/shows/2025-04-04"
   },
   "2025-04-03": {
     "date": "2025-04-03",
