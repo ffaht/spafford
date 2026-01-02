@@ -530,6 +530,7 @@ function loadJams(){
       let foundSetName = '';
       
       // Convert date to match database format if needed
+      const debugDate = false;
       const dbDate = entry.date.includes('-') && entry.date.split('-')[0].length === 4 
         ? entry.date 
         : (() => {
@@ -541,10 +542,6 @@ function loadJams(){
       if (dbShows[dbDate]) {
         const show = dbShows[dbDate];
         const sets = show.sets || {};
-        
-        // Only log for specific dates to reduce console spam
-        const debugDate = dbDate === '2025-06-13' || dbDate === '2025-01-17';
-        
         if (debugDate) {
           console.log(`🔍 Checking date: ${dbDate} for song "${entry.song}"`);
           console.log('Available sets:', Object.keys(sets));
@@ -1045,10 +1042,6 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
 function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
   setTimeout(() => {
     let currentTooltip = null;
-// v27: expose currentTooltip reference
-window.__getCurrentTooltip = () => currentTooltip;
-window.__setCurrentTooltip = (t) => { currentTooltip = t; };
-
     const container = containerSelector ? document.getElementById(containerSelector) : document;
     const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || (window.matchMedia && window.matchMedia("(hover: none)").matches);
 
@@ -1256,10 +1249,6 @@ function showSetlistForDate(date) {
         })());
     return jamDbDate === dbDate;
   });
-  // v26: expose current setlist context for mobile tooltip handler
-  window.__currentSetlistDbDate = dbDate;
-  window.__currentSetlistJamEntries = jamEntries;
-
   
   console.log(`🎵 Jam entries for ${dbDate}:`, jamEntries);
   
@@ -3857,153 +3846,99 @@ function showRandomObsidianSetlist() {
 
 </script>
 
-
-
-
-<script id="mobile-setlist-jam-v26">
+<script id="mobile-setlist-jam-v22">
 /*
-  v26: Mobile setlist behavior that is NOT timing/DOM injection dependent.
-  Uses showSetlistForDate()'s jamEntries exposed on window.__currentSetlistJamEntries.
-  - Tap on [data-song][data-jam="true"]: toggle tooltip on same page, never navigate.
-  - Tap elsewhere: close tooltip.
-  - Long-press (~550ms): navigate to Jam Chart page.
+  v22: Capture-phase mobile override for setlist jam songs.
+  Goal: On touch taps, NEVER switch to Jam Chart page; instead show tooltip in-place.
+  Long-press (~500ms) explicitly navigates (same as your existing jams navigation).
+  This runs in addition to existing handlers and prevents them from firing on touch taps.
 */
 (function(){
-  const LONG_PRESS_MS = 550;
+  const LONG_PRESS_MS = 500;
+  let timer = null;
+  let longPressed = false;
+  let pressEl = null;
 
-  let lpTimer = null;
-  let lpFired = false;
-  let pressHost = null;
-
-  function getHost(t){
+  function isJamSetlistEl(t){
     return t && t.closest ? t.closest('[data-song][data-jam="true"]') : null;
   }
 
-  function normalize(str){
-    return (str || "").toLowerCase().replace(/\s+/g, " ").trim();
-  }
-
-  function getEntryForHost(host){
-    const jams = window.__currentSetlistJamEntries || [];
-    if (!jams.length) return null;
-
-    const songName = (host.dataset.song || host.textContent || "").trim();
-    if (!songName) return null;
-
-    const songNorm = normalize(songName);
-    const timing = host.dataset.timing ? parseInt(host.dataset.timing, 10) : NaN;
-
-    const candidates = jams.filter(j => normalize(j.song) === songNorm);
-    if (!candidates.length) return null;
-
-    if (!Number.isNaN(timing)) {
-      const byTiming = candidates.find(j => {
-        const m = (j.timing || "").match(/^(\d+):/);
-        if (!m) return false;
-        return parseInt(m[1], 10) === timing;
-      });
-      if (byTiming) return byTiming;
-    }
-
-    return candidates[0];
-  }
-
-  function navigateToJam(host){
-    const songName = (host.dataset.song || host.textContent || "").trim();
-    if (!songName) return;
-    if (typeof switchPageByName === "function") {
-      switchPageByName("jams");
-      const si = document.getElementById("search-input");
-      if (si) si.value = songName;
-      if (typeof renderFilteredJams === "function") renderFilteredJams();
-    }
-  }
-
-  // Close tooltip when tapping outside jam host/tooltip
+  // Arm long press timer
   document.addEventListener("touchstart", function(e){
-    const host = getHost(e.target);
-    const inTooltip = e.target && e.target.closest ? e.target.closest(".tooltip") : null;
-    if (!host && !inTooltip) {
-      if (typeof removeTooltip === "function") removeTooltip();
-    }
-  }, {passive:true, capture:true});
-
-  // Arm long press
-  document.addEventListener("touchstart", function(e){
-    const host = getHost(e.target);
-    if (!host) return;
-
-    pressHost = host;
-    lpFired = false;
-
-    if (lpTimer) clearTimeout(lpTimer);
-    lpTimer = setTimeout(function(){
-      lpFired = true;
-      if (typeof removeTooltip === "function") removeTooltip();
-      navigateToJam(pressHost);
+    const el = isJamSetlistEl(e.target);
+    if (!el) return;
+    pressEl = el;
+    longPressed = false;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function(){
+      longPressed = true;
+      // Navigate using existing SPA route
+      try {
+        const songName = pressEl.dataset.song?.trim() || pressEl.textContent.trim();
+        removeTooltip?.();
+        switchPageByName?.("jams");
+        const si = document.getElementById("search-input");
+        if (si) si.value = songName;
+        renderFilteredJams?.();
+      } catch(_) {}
     }, LONG_PRESS_MS);
   }, {passive:true, capture:true});
 
-  // Cancel long press on move/cancel
-  function cancelLP(){
-    if (lpTimer) clearTimeout(lpTimer);
-    lpTimer = null;
-    pressHost = null;
-    lpFired = false;
-  }
-  document.addEventListener("touchmove", cancelLP, {passive:true, capture:true});
-  document.addEventListener("touchcancel", cancelLP, {passive:true, capture:true});
+  // Cancel on scroll/move
+  document.addEventListener("touchmove", function(){
+    if (timer) clearTimeout(timer);
+    timer = null;
+  }, {passive:true, capture:true});
 
-  // Tap => tooltip (never navigate), block downstream handlers
+  // Tap => tooltip; block all other click handlers
   document.addEventListener("touchend", function(e){
-    const host = getHost(e.target);
-    if (!host) return;
+    const el = isJamSetlistEl(e.target);
+    if (!el) return;
+    if (timer) clearTimeout(timer);
+    timer = null;
 
-    if (lpTimer) clearTimeout(lpTimer);
-    lpTimer = null;
-
-    if (lpFired){
+    // If long press already navigated, suppress synthetic click
+    if (longPressed){
       e.preventDefault();
       e.stopPropagation();
-      lpFired = false;
       return;
     }
 
-    const entry = getEntryForHost(host);
-    if (entry && typeof showTooltip === "function") {
-      try {
-        const _ct = (typeof window.__getCurrentTooltip==="function") ? window.__getCurrentTooltip() : window.currentTooltip;
-        if (_ct && _ct.dataset.song === host.dataset.song) {
-          if (typeof removeTooltip === "function") removeTooltip();
+    // Tap: show/toggle tooltip on same page
+    try {
+      const entry = el.__jamEntry || null; // best if present
+      if (!entry) {
+        // If no entry attached, just do nothing but also do NOT navigate
+        removeTooltip?.();
+      } else {
+        // Toggle current tooltip for this song
+        if (window.currentTooltip && window.currentTooltip.dataset.song === el.dataset.song) {
+          removeTooltip?.();
         } else {
-          showTooltip(host, entry);
-          try { if (typeof window.__setCurrentTooltip==="function") window.__setCurrentTooltip(document.querySelector(".tooltip")); } catch(_) {}
+          showTooltip?.(el, entry);
         }
-      } catch(_) {
-        showTooltip(host, entry);
-          try { if (typeof window.__setCurrentTooltip==="function") window.__setCurrentTooltip(document.querySelector(".tooltip")); } catch(_) {}
       }
-    } else {
-      if (typeof removeTooltip === "function") removeTooltip();
-    }
+    } catch(_) {}
 
+    // Block any navigation / delegated handlers
     e.preventDefault();
     e.stopPropagation();
   }, {passive:false, capture:true});
 
-  // swallow synthetic click after touch
+  // Extra safety: block click on jam setlist elements if it follows a touch tap
   document.addEventListener("click", function(e){
-    const host = getHost(e.target);
-    if (!host) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    const el = isJamSetlistEl(e.target);
+    if (!el) return;
+    // If a touch happened recently and it wasn't a long press, swallow the click.
+    if (!longPressed) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }
+    longPressed = false;
   }, true);
 })();
 </script>
-
-
-
 
 </body>
 </html>
