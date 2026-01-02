@@ -230,6 +230,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 @media(max-width:768px){.container{padding:15px;}.site-header h1{font-size:2rem;}}
 </style>
+
+<style id="mobile-setlist-interaction-v17">
+.clickable-song { -webkit-tap-highlight-color: rgba(0,0,0,0) !important; }
+.clickable-song, .clickable-song * {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  touch-action: manipulation;
+}
+</style>
+
 </head>
 <body>
 <header class="site-header">
@@ -1034,10 +1045,18 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
 function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
   setTimeout(() => {
     let currentTooltip = null;
-    const container = containerSelector ? document.getElementById(containerSelector) : document;
-    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+// v27: expose currentTooltip reference
+window.__getCurrentTooltip = () => currentTooltip;
+window.__setCurrentTooltip = (t) => { currentTooltip = t; };
 
-    const removeTooltip = () => {
+    const container = containerSelector ? document.getElementById(containerSelector) : document;
+    const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || (window.matchMedia && window.matchMedia("(hover: none)").matches);
+
+    
+// v21: track recent touch to drive mobile behavior without relying on device detection
+let __lastTouchTime = 0;
+document.addEventListener("touchstart", () => { __lastTouchTime = Date.now(); }, { passive: true });
+const removeTooltip = () => {
       if (currentTooltip) {
         currentTooltip.remove();
         currentTooltip = null;
@@ -1087,7 +1106,7 @@ function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
       const songName = songElement.dataset.song?.trim();
       const isJamCharted = songElement.dataset.jam === "true";
       const matchingEntry = isJamCharted
-        ? jamEntries.find(j => normalizeSongName(j.song) === normalizeSongName(songName))
+        ? (songElement.__jamEntry || jamEntries.find(j => normalizeSongName(j.song) === normalizeSongName(songName)))
         : null;
 
       // basic style
@@ -1096,12 +1115,62 @@ function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
       songElement.style.userSelect = "none";
       songElement.style.webkitTapHighlightColor = "transparent";
 
+      // MOBILE: tap shows tooltip, long-press navigates to jam chart page
+      let _lpTimer = null;
+      let _lpFired = false;
+      const _LP_MS = 500;
+
+      if (isTouchDevice && isJamCharted) {
+        songElement.addEventListener("touchstart", (te) => {
+          _lpFired = false;
+          if (_lpTimer) clearTimeout(_lpTimer);
+          _lpTimer = setTimeout(() => {
+            _lpFired = true;
+            // navigate to jam chart page for this song
+            switchPageByName("jams");
+            const searchEl = document.getElementById("search-input");
+            if (searchEl) searchEl.value = songName;
+            renderFilteredJams();
+          }, _LP_MS);
+        }, { passive: true });
+
+        songElement.addEventListener("touchmove", () => {
+          if (_lpTimer) clearTimeout(_lpTimer);
+          _lpTimer = null;
+        }, { passive: true });
+
+        songElement.addEventListener("touchend", (te) => {
+          if (_lpTimer) clearTimeout(_lpTimer);
+          _lpTimer = null;
+          if (_lpFired) {
+            // suppress the synthetic click after a long-press
+            te.preventDefault();
+            te.stopPropagation();
+          }
+        }, { passive: false });
+      }
+
       // Click handler (works for desktop + mobile)
       songElement.addEventListener("click", e => {
+        e.preventDefault();
         e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
 
         // MOBILE SPECIAL: if jam charted & has tooltip, show it instead of navigating
-        if (isTouchDevice && isJamCharted && matchingEntry) {
+        if (_lpFired) { _lpFired = false; return; }
+
+        if (isTouchDevice && isJamCharted) {
+          // Mobile: tap toggles tooltip ONLY (never navigate)
+          if (typeof e.preventDefault === "function") e.preventDefault();
+          e.stopPropagation();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+          if (!matchingEntry) {
+            // Safety: if we somehow can't find an entry, just close any open tooltip and do nothing else.
+            removeTooltip();
+            return;
+          }
+
           // toggle
           if (currentTooltip && currentTooltip.dataset.song === songElement.dataset.song) {
             removeTooltip();
@@ -1113,8 +1182,28 @@ function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
 
         // Otherwise — original click behavior
         if (isJamCharted) {
+          const isRecentTouch = (Date.now() - __lastTouchTime) < 1000;
+
+          // v21: On actual taps (touch), first tap shows tooltip; second tap navigates.
+          if (isRecentTouch && matchingEntry) {
+            if (currentTooltip && currentTooltip.dataset.song === songElement.dataset.song) {
+              // second tap -> navigate
+              removeTooltip();
+              switchPageByName("jams");
+              const si = document.getElementById("search-input");
+              if (si) si.value = songName;
+              renderFilteredJams();
+            } else {
+              // first tap -> tooltip only
+              showTooltip(songElement, matchingEntry);
+            }
+            return;
+          }
+
+          // Desktop / non-touch: original behavior (navigate immediately)
           switchPageByName("jams");
-          document.getElementById("search-input").value = songName;
+          const si = document.getElementById("search-input");
+          if (si) si.value = songName;
           renderFilteredJams();
         } else {
           const normalizedName = normalizeSongName(songName);
@@ -1167,6 +1256,10 @@ function showSetlistForDate(date) {
         })());
     return jamDbDate === dbDate;
   });
+  // v26: expose current setlist context for mobile tooltip handler
+  window.__currentSetlistDbDate = dbDate;
+  window.__currentSetlistJamEntries = jamEntries;
+
   
   console.log(`🎵 Jam entries for ${dbDate}:`, jamEntries);
   
@@ -1466,8 +1559,10 @@ setTimeout(() => {
           console.log(`Comparing "${songName}": jam ${jamMinutes}min vs element ${elementTimingNumber}min = diff ${timingDiff}`);
           return timingDiff <= 1;
         });
-        
-        if (bestJamEntry) {
+    // Store matched jam entry on the element for reliable mobile taps
+    songElement.__jamEntry = bestJamEntry;
+
+    if (bestJamEntry) {
           console.log(`Exact timing match found for "${songName}": ${bestJamEntry.timing}`);
         } else {
           console.log(`No exact timing match for "${songName}" (${elementTimingNumber} min) - available: ${possibleJamEntries.map(j => j.timing).join(', ')}`);
@@ -3761,5 +3856,154 @@ function showRandomObsidianSetlist() {
 }
 
 </script>
+
+
+
+
+<script id="mobile-setlist-jam-v26">
+/*
+  v26: Mobile setlist behavior that is NOT timing/DOM injection dependent.
+  Uses showSetlistForDate()'s jamEntries exposed on window.__currentSetlistJamEntries.
+  - Tap on [data-song][data-jam="true"]: toggle tooltip on same page, never navigate.
+  - Tap elsewhere: close tooltip.
+  - Long-press (~550ms): navigate to Jam Chart page.
+*/
+(function(){
+  const LONG_PRESS_MS = 550;
+
+  let lpTimer = null;
+  let lpFired = false;
+  let pressHost = null;
+
+  function getHost(t){
+    return t && t.closest ? t.closest('[data-song][data-jam="true"]') : null;
+  }
+
+  function normalize(str){
+    return (str || "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function getEntryForHost(host){
+    const jams = window.__currentSetlistJamEntries || [];
+    if (!jams.length) return null;
+
+    const songName = (host.dataset.song || host.textContent || "").trim();
+    if (!songName) return null;
+
+    const songNorm = normalize(songName);
+    const timing = host.dataset.timing ? parseInt(host.dataset.timing, 10) : NaN;
+
+    const candidates = jams.filter(j => normalize(j.song) === songNorm);
+    if (!candidates.length) return null;
+
+    if (!Number.isNaN(timing)) {
+      const byTiming = candidates.find(j => {
+        const m = (j.timing || "").match(/^(\d+):/);
+        if (!m) return false;
+        return parseInt(m[1], 10) === timing;
+      });
+      if (byTiming) return byTiming;
+    }
+
+    return candidates[0];
+  }
+
+  function navigateToJam(host){
+    const songName = (host.dataset.song || host.textContent || "").trim();
+    if (!songName) return;
+    if (typeof switchPageByName === "function") {
+      switchPageByName("jams");
+      const si = document.getElementById("search-input");
+      if (si) si.value = songName;
+      if (typeof renderFilteredJams === "function") renderFilteredJams();
+    }
+  }
+
+  // Close tooltip when tapping outside jam host/tooltip
+  document.addEventListener("touchstart", function(e){
+    const host = getHost(e.target);
+    const inTooltip = e.target && e.target.closest ? e.target.closest(".tooltip") : null;
+    if (!host && !inTooltip) {
+      if (typeof removeTooltip === "function") removeTooltip();
+    }
+  }, {passive:true, capture:true});
+
+  // Arm long press
+  document.addEventListener("touchstart", function(e){
+    const host = getHost(e.target);
+    if (!host) return;
+
+    pressHost = host;
+    lpFired = false;
+
+    if (lpTimer) clearTimeout(lpTimer);
+    lpTimer = setTimeout(function(){
+      lpFired = true;
+      if (typeof removeTooltip === "function") removeTooltip();
+      navigateToJam(pressHost);
+    }, LONG_PRESS_MS);
+  }, {passive:true, capture:true});
+
+  // Cancel long press on move/cancel
+  function cancelLP(){
+    if (lpTimer) clearTimeout(lpTimer);
+    lpTimer = null;
+    pressHost = null;
+    lpFired = false;
+  }
+  document.addEventListener("touchmove", cancelLP, {passive:true, capture:true});
+  document.addEventListener("touchcancel", cancelLP, {passive:true, capture:true});
+
+  // Tap => tooltip (never navigate), block downstream handlers
+  document.addEventListener("touchend", function(e){
+    const host = getHost(e.target);
+    if (!host) return;
+
+    if (lpTimer) clearTimeout(lpTimer);
+    lpTimer = null;
+
+    if (lpFired){
+      e.preventDefault();
+      e.stopPropagation();
+      lpFired = false;
+      return;
+    }
+
+    const entry = getEntryForHost(host);
+    if (entry && typeof showTooltip === "function") {
+      try {
+        const _ct = (typeof window.__getCurrentTooltip==="function") ? window.__getCurrentTooltip() : window.currentTooltip;
+        if (_ct && _ct.dataset.song === host.dataset.song) {
+          if (typeof removeTooltip === "function") removeTooltip();
+        } else {
+          showTooltip(host, entry);
+          try { if (typeof window.__setCurrentTooltip==="function") window.__setCurrentTooltip(document.querySelector(".tooltip")); } catch(_) {}
+        }
+      } catch(_) {
+        showTooltip(host, entry);
+          try { if (typeof window.__setCurrentTooltip==="function") window.__setCurrentTooltip(document.querySelector(".tooltip")); } catch(_) {}
+      }
+    } else {
+      if (typeof removeTooltip === "function") removeTooltip();
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+  }, {passive:false, capture:true});
+
+  // swallow synthetic click after touch
+  document.addEventListener("click", function(e){
+    const host = getHost(e.target);
+    if (!host) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+  }, true);
+})();
+</script>
+
+
+
+
 </body>
 </html>
