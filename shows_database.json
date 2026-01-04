@@ -950,13 +950,16 @@
     "state": "MA",
     "tour": "2025 Spring",
     "show_number": "13",
-    "rating": "",
-    "chucks_dream": "rating:",
+    "rating": "tags:",
+    "chucks_dream": "Hold On",
     "sets": {
-      "Set 1": "Mind's Unchained (16), A Union Divine (3), Shelter in Place (16), Machine Elves (4), Enjoy the Silence (9), Ain't That Wrong (14)"
+      "Set 1": "Mind's Unchained (16), A Union Divine (3), Shelter in Place (16), Machine Elves (4), Enjoy the Silence (9), Ain't That Wrong (14)",
+      "Chuck's Dream": "Hold On",
+      "Set 2": "Red's Jam (19) -> Dirtbath (28) -> Neutrino (16) -> Weasel (13)",
+      "Encore": "Parody (13)"
     },
     "notes": [
-      "**"
+      "*This was the 13th show of the 2025 Spring Tour and the third and final night of a three-night run at Soundcheck Studios. **Red's Jam** contained **Night After Night** teases from Cory, Love Buzz (Nirvana) teases from Shon, and a Xanadu (Rush) tease from Nick. **Dirtbath** was inverted and contained Conga (Miami Sound Machine) teases from Brian.*"
     ],
     "source": "obsidian",
     "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-04-05.md",
@@ -15212,7 +15215,7 @@
       "Encore": "The Reprise (14)"
     },
     "notes": [
-      "*This was the first show of the 2025 NYE Run and the band's first appearance at Vivarium since 12/8/24, ending a **106 show gap**. **Peaches** contained several **Dissociation Assist** teases from Cory. *"
+      "*This was the first show of the 2025 NYE Run and the band's first appearance at Vivarium since 12/8/24, ending a **106 show gap**. Squeaky Feet was the opening act. **Peaches** contained several **Dissociation Assist** teases from Cory. *"
     ],
     "source": "obsidian",
     "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-12-29.md",
@@ -15234,10 +15237,29 @@
       "Encore": "Stratus (10)"
     },
     "notes": [
-      "*This was the second show of the 2025 NYE Run. **Hollywood** and **Motel 6** featured Mike Savino (Tall Tall Trees) on banjo. **Can't Find My Vape** contained a **Plush** tease from Nick. **Motel 6** contained several Highest Forms of Music and Alternative Universe located samples from Cory. **Pursuit of Trance** contained **Plush** teases from Nick and **The Other One** teases from Shon.*"
+      "*This was the second show of the 2025 NYE Run. Modern Joey was the opening act. **Hollywood** and **Motel 6** featured Mike Savino (Tall Tall Trees) on banjo. **Can't Find My Vape** contained a **Plush** tease from Nick. **Motel 6** contained several Highest Forms of Music and Alternative Universe Located samples from Cory. **Pursuit of Trance** contained **Plush** teases from Nick and **The Other One** teases from Shon.*"
     ],
     "source": "obsidian",
     "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-12-30.md",
+    "url": ""
+  },
+  "2025-12-31": {
+    "date": "2025-12-31",
+    "venue": "Vivarium",
+    "city": "Milwaukee",
+    "state": "WI",
+    "tour": "2025 NYE",
+    "show_number": "3",
+    "rating": "",
+    "chucks_dream": "rating:",
+    "sets": {
+      "Set 1": "Fake the Fate (5), Todd's Tots (22), Diana (4), Dissociation Assist (10) -> Run Like Hell (16)"
+    },
+    "notes": [
+      "*This was the third and final show of the 2025 NYE Run. **Todd's Tots** was followed by a **Diana** tease from Brian. **Run Like Hell** contained several Echoes and **Night After Night** teases from Cory.*"
+    ],
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-12-31.md",
     "url": ""
   }
 }
