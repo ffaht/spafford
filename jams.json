@@ -1028,6 +1028,20 @@
     "notes": "\nAn expos\u00e9 on the current style of jamming, moving through groove-oriented pockets, celebratory electronic playing, swarms of electric killer bees, and rhythm & blues that blooms tribalistically in and out of outer space before ramping -> All My Friends.\n"
   },
   {
+    "date": "2025-04-15",
+    "song": "Gold Glittered Hat",
+    "timing": "16:24",
+    "venue": "The Broadberry",
+    "notes": "\nSuper slick final couple of minutes.\n"
+  },
+  {
+    "date": "2025-04-15",
+    "song": "The Way You Do the Things You Do",
+    "timing": "22:24",
+    "venue": "The Broadberry",
+    "notes": "\nStandard first half, followed by a second half that descends into a subaquatic tunnel system, refracting light as it moves toward the beach and morphs into the sunrise.\n"
+  },
+  {
     "date": "2025-06-12",
     "song": "Broken Wing",
     "timing": "35:10",
@@ -3347,6 +3361,13 @@
   },
   {
     "date": "2025-12-31",
+    "song": "Darkness Singularity",
+    "timing": "5:50",
+    "venue": "Vivarium",
+    "notes": "\nEnding only. Builds angrily and energetically to finish out the year.\n"
+  },
+  {
+    "date": "2025-12-31",
     "song": "Dissociation Assist",
     "timing": "10:02",
     "venue": "Vivarium",
@@ -3355,9 +3376,40 @@
   },
   {
     "date": "2025-12-31",
+    "song": "Electric Taco Stand",
+    "timing": "10:28",
+    "venue": "Vivarium",
+    "highlighted": true,
+    "notes": "\nScans through thick clouds for crystalline biosignatures before flying into the dark and -> Weasel.\n"
+  },
+  {
+    "date": "2025-12-31",
+    "song": "High Beams",
+    "timing": "5:15",
+    "venue": "Vivarium",
+    "highlighted": true,
+    "notes": "\nSequenced synth phases in a loop as Cory jumps on saxophone, rotating through entrancing Afrobeat.\n"
+  },
+  {
+    "date": "2025-12-31",
+    "song": "Money for Nothing",
+    "timing": "17:13",
+    "venue": "Vivarium",
+    "highlighted": true,
+    "notes": "\nAbsurdly colorful funk that repeatedly builds into higher levels of the dance floor before dissipating into hazy noise.\n"
+  },
+  {
+    "date": "2025-12-31",
     "song": "Run Like Hell",
     "timing": "16:37",
     "venue": "Vivarium",
     "notes": "\nCircular, robotic stomping.\n"
+  },
+  {
+    "date": "2025-12-31",
+    "song": "Weasel",
+    "timing": "11:45",
+    "venue": "Vivarium",
+    "notes": "\nAesthetically similar to 1/17/25 Ain\u2019t That Wrong, this one takes a laid-back approach as it moves through and along a city\u2019s port.\n"
   }
 ]
