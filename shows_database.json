@@ -913,14 +913,26 @@
     "date": "2025-04-17"
   },
   "2025-04-16": {
-    "url": "https://spaffnerds.com/shows/2025-04-16",
+    "date": "2025-04-16",
     "venue": "Brooklyn Arts Center",
     "city": "Wilmington",
     "state": "NC",
-    "sets": {},
-    "notes": [],
-    "source": "spaffnerds",
-    "date": "2025-04-16"
+    "tour": "2025 Spring",
+    "show_number": "15",
+    "rating": "tags:",
+    "chucks_dream": "Flit",
+    "sets": {
+      "Set 1": "Pursuit of Madness (25) -> Ice Cream (9), Gotta Save Fred (17) -> Sham Time (8)",
+      "Chuck's Dream": "Flit",
+      "Set 2": "Broken Wing (35) -> Motel 6 (8), War of Man (13) -> Musette (4) -> Virtual Bean Dip (7)",
+      "Encore": "Diana (5)"
+    },
+    "notes": [
+      "*This was the 15th show of the 2025 Spring Tour.*"
+    ],
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-04-16.md",
+    "url": "https://spaffnerds.com/shows/2025-04-16"
   },
   "2025-04-15": {
     "date": "2025-04-15",
