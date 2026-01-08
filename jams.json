@@ -1013,6 +1013,13 @@
   },
   {
     "date": "2025-04-05",
+    "song": "Parody",
+    "timing": "13:44",
+    "venue": "Soundcheck Studios",
+    "notes": "\nDub-y with an explosive finish.\n"
+  },
+  {
+    "date": "2025-04-05",
     "song": "Red's Jam",
     "timing": "19:16",
     "venue": "Soundcheck Studios",
@@ -1043,6 +1050,13 @@
   },
   {
     "date": "2025-04-16",
+    "song": "Broken Wing",
+    "timing": "34:47",
+    "venue": "Brooklyn Arts Center",
+    "notes": "\nTwo jams with straightforward yet entrancing grooving.\n"
+  },
+  {
+    "date": "2025-04-16",
     "song": "Gotta Save Fred",
     "timing": "17:39",
     "venue": "Brooklyn Arts Center",
@@ -1063,6 +1077,30 @@
     "timing": "13:13",
     "venue": "Brooklyn Arts Center",
     "notes": "\nLaid back trance.\n"
+  },
+  {
+    "date": "2025-04-17",
+    "song": "Darkness Singularity",
+    "timing": "18:33",
+    "venue": "Cohab.Space",
+    "highlighted": true,
+    "notes": "\nJump rope synthpop that slides into nocturnal grooving and heats into an implosive, fantastic ending.\n"
+  },
+  {
+    "date": "2025-04-17",
+    "song": "Fake the Fate",
+    "timing": "16:13",
+    "venue": "Cohab.Space",
+    "highlighted": true,
+    "notes": "\nWobbles funkily through a city before coasting down a desert highway that grows glitzy with grand piano, heating up as it heads toward bright lights. A brief hesitation, then it gears -> Darkness Singularity.\n"
+  },
+  {
+    "date": "2025-04-17",
+    "song": "Hollywood",
+    "timing": "26:59",
+    "venue": "Cohab.Space",
+    "highlighted": true,
+    "notes": "\nRuns alongside a bright white, raging river before unexpectedly hitting the trail\u2019s end and joining an alien dance ritual, grooving into the night and sneaking past a train as it launches into mutant space disco that robotically rocks its way upward.\n"
   },
   {
     "date": "2025-06-12",
@@ -2104,7 +2142,7 @@
     "song": "Hollywood",
     "timing": "20:58",
     "venue": "The Annex",
-    "notes": "\nJust the fifth ever show opener and a good one at that, steadily marching its way into playful groove that Cory lays synths on top of. Nice build and fade -> Fake the Fate. \n"
+    "notes": "Just the fifth ever show opener and a good one at that, steadily marching its way into a playful groove that Cory lays synths on top of. Nice build and fade -> Fake the Fate."
   },
   {
     "date": "2025-08-27",
