@@ -858,42 +858,46 @@
     "date": "2025-07-20"
   },
   "2025-04-19": {
-    "url": "https://spaffnerds.com/shows/2025-04-19",
-    "venue": "Pisgah Brewing Company",
+    "date": "2025-04-19",
+    "venue": "Pisgah Brewing Co.",
     "city": "Black Mountain",
     "state": "NC",
+    "tour": "2025 Spring",
+    "show_number": "18",
+    "rating": "",
+    "chucks_dream": "rating:",
     "sets": {
-      "Set 1": "Settled In > Neutrino > The Postman,, High Beams [ 1 ],, Anyone [ 2 ]",
-      "Set 2": "Money For Nothing [ 3 ] > Impressions [ 4 ] > Electric Taco Stand,, Sweet [ 5 ],, Weasel > Run Like Hell [ 6 ] > Weasel > Run Like Hell",
-      "Encore": "Walls [ 7 ]"
+      "Set 1": "Settled In (5), Neutrino (13) > The Postman (21), High Beams (4), Anyone (17)",
+      "Set 2": "Money for Nothing (19) -> Electric Taco Stand (19), Sweet (7) > Weasel (9) -> Run Like Hell (10) -> Weasel (9) -> Run Like Hell (1)",
+      "Encore": "Walls (11)"
     },
     "notes": [
-      "[ 1 ]: First Time Played",
-      "[ 2 ]: Demi Lovato",
-      "[ 3 ]: Dire Straits",
-      "[ 4 ]: John Coltrane",
-      "[ 5 ]: Gary Ukura",
-      "[ 6 ]: Pink Floyd",
-      "[ 7 ]: OG version"
+      "**"
     ],
-    "source": "spaffnerds",
-    "date": "2025-04-19"
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-04-19.md",
+    "url": "https://spaffnerds.com/shows/2025-04-19"
   },
   "2025-04-18": {
-    "url": "https://spaffnerds.com/shows/2025-04-18",
+    "date": "2025-04-18",
     "venue": "5 Points Music Sanctuary",
-    "city": "Roanoke",
-    "state": "VA",
+    "city": "state:",
+    "state": "",
+    "tour": "2025 Spring",
+    "show_number": "17",
+    "rating": "",
+    "chucks_dream": "rating:",
     "sets": {
-      "Set 1": "Space Gadget,, America,, Tongue N' Groove [ 1 ],, Frog Gossip,, The Remedy,, Back in L.A.,, The Hard Way",
-      "Set 2": "Double Time,, Duncan's Uncle,, Ain't That Wrong > Ginger Stardust > Ain't That Wrong,, The Reprise",
-      "Encore": "Mind's Unchained"
+      "Set 1": "Space Gadget (4), America (14), Tongue N' Groove (10), Frog Gossip (6), The Remedy (18), Back in L.A. (4) > The Hard Way (7)",
+      "Set 2": "Double Time (21), Ain't That Wrong (10) -> Ginger Stardust (14) -> Ain't That Wrong (1), The Reprise (13)",
+      "Encore": "Mind's Unchained (14)"
     },
     "notes": [
-      "[ 1 ]: Steve Kimock"
+      "**"
     ],
-    "source": "spaffnerds",
-    "date": "2025-04-18"
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2025-04-18.md",
+    "url": "https://spaffnerds.com/shows/2025-04-18"
   },
   "2025-04-17": {
     "date": "2025-04-17",
