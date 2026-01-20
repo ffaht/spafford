@@ -3594,6 +3594,13 @@
   },
   {
     "date": "2026-01-15",
+    "song": "Ginger Stardust",
+    "timing": "17:29",
+    "venue": "Barrelhouse Ballroom",
+    "notes": "\nBounces into ethereal space before peaking nicely.\n"
+  },
+  {
+    "date": "2026-01-15",
     "song": "In the Eyes of Thieves",
     "timing": "17:40",
     "venue": "Barrelhouse Ballroom",
@@ -3638,10 +3645,34 @@
   },
   {
     "date": "2026-01-17",
+    "song": "Dirtbath",
+    "timing": "29:30",
+    "venue": "Variety Playhouse",
+    "highlighted": true,
+    "notes": "\nA beautiful opening featuring emotional grand piano work gives way to an absurdly funky jam with several distinct layers.\n"
+  },
+  {
+    "date": "2026-01-17",
     "song": "Gold Glittered Hat",
     "timing": "17:35",
     "venue": "Variety Playhouse",
     "notes": "\nCelebratory and energetic to the max.\n"
+  },
+  {
+    "date": "2026-01-17",
+    "song": "High Beams",
+    "timing": "5:07",
+    "venue": "Variety Playhouse",
+    "highlighted": true,
+    "notes": "\nFlies between electronically blinking Afro-Funk stars as Cory cycles through several different keys.\n"
+  },
+  {
+    "date": "2026-01-17",
+    "song": "Kiss Off",
+    "timing": "7:07",
+    "venue": "Variety Playhouse",
+    "highlighted": true,
+    "notes": "\nUnexpected Post-Punk grooving on the main theme pops up and slows before morphing -> Mad World.\n"
   },
   {
     "date": "2026-01-17",
