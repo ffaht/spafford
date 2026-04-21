@@ -21,7 +21,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .site-header h1{font-size:2.5rem;margin-bottom:0.5rem;}
 .site-header p{color:var(--muted-color);}
 .site-disclaimer{font-size:0.85rem;font-style:italic;margin-top:0.5rem;}
-.search-container{display:flex;gap:1rem;margin-bottom:2rem;align-items:center;}
+.search-container{display:flex;gap:1rem;margin-bottom:0.75rem;align-items:center;}
+.year-filter-container{display:flex;gap:0.5rem;margin-bottom:1.5rem;}
+.year-btn{padding:0.4rem 1.1rem;border-radius:999px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--muted-color);font-size:0.85rem;cursor:pointer;transition:all 0.15s ease;}
+.year-btn:hover{border-color:var(--yellow);color:var(--yellow);}
+.year-btn.active{background:transparent;border-color:var(--yellow);color:var(--yellow);font-weight:600;}
 #search-input{flex:1;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
 #filter-select{padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);}
 .search-container input[type="text"]{flex:1;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
@@ -281,6 +285,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <option value="highlighted">Highlighted</option>
 </select>
 </div>
+<div class="year-filter-container">
+  <button class="year-btn" onclick="setYearFilter('2025')" id="year-btn-2025">2025</button>
+  <button class="year-btn active" onclick="setYearFilter('2026')" id="year-btn-2026">2026</button>
+</div>
 <div class="jam-table-container">
 <table class="jam-table">
 <thead>
@@ -438,6 +446,7 @@ let allJams = [];
 let currentSort = {column:'date',direction:'desc'};
 const tableBody = document.getElementById('jam-table-body');
 let currentTooltip = null;
+let yearFilter = '2026';
 
 // Add normalizeSongName function here, before it's used in processShowsDatabase
 function normalizeSongName(s) {
@@ -500,14 +509,9 @@ function formatDateForDisplay(dateStr) {
 }
 
 function loadJams(){
-  console.log('Loading jams.json...');
   fetch('jams.json')
-  .then(r=>{
-    console.log('Jams response:', r.status);
-    return r.json();
-  })
+  .then(r=>r.json())
   .then(data=>{
-    console.log('Jams loaded:', data.length, 'entries');
     
     // Process jams to add setlist order information
     const processedJams = [];
@@ -537,14 +541,6 @@ function loadJams(){
       if (dbShows[dbDate]) {
         const show = dbShows[dbDate];
         const sets = show.sets || {};
-        
-        // Only log for specific dates to reduce console spam
-        const debugDate = dbDate === '2025-06-13' || dbDate === '2025-01-17';
-        
-        if (debugDate) {
-          console.log(`🔍 Checking date: ${dbDate} for song "${entry.song}"`);
-          console.log('Available sets:', Object.keys(sets));
-        }
         
         // Create an array of set entries and sort them by set order
         const setEntries = Object.entries(sets);
@@ -608,9 +604,6 @@ function loadJams(){
               
               positionInSet = songIndex;
               
-              if (debugDate) {
-                console.log(`✅ FOUND: "${entry.song}" in ${setName} at position ${positionInSet} (order: ${setOrder}, timing: ${jamTiming}→${setlistTiming})`);
-              }
               break;
             }
           }
@@ -618,10 +611,6 @@ function loadJams(){
         }
         
         if (!found) {
-          if (debugDate) {
-            console.log(`❌ NOT FOUND: "${entry.song}" (${jamTiming}min) in any set for ${dbDate}`);
-          }
-          
           // Fallback: Try aggressive partial matching (for edge cases)
           for (const [setName, setContent] of setEntries) {
             const songs = parseDbSetlist(setContent);
@@ -631,9 +620,6 @@ function loadJams(){
               
               // Check if either string contains the other
               if (setlistSongNorm.includes(jamSongNorm) || jamSongNorm.includes(setlistSongNorm)) {
-                if (debugDate) {
-                  console.log(`🔄 PARTIAL MATCH: "${entry.song}" ≈ "${setlistSong}"`);
-                }
                 found = true;
                 foundSetName = setName;
                 
@@ -648,19 +634,11 @@ function loadJams(){
                 }
                 
                 positionInSet = songIndex;
-                
-                if (debugDate) {
-                  console.log(`✅ AGGRESSIVE FOUND: "${entry.song}" in set ${setName} at position ${positionInSet}`);
-                }
                 break;
               }
             }
             if (found) break;
           }
-        }
-      } else {
-        if (debugDate) {
-          console.log(`❌ NO SHOW DATA: No show data for date ${dbDate}`);
         }
       }
       
@@ -691,7 +669,7 @@ try {
     if (locationText.endsWith(',')) locationText = locationText.slice(0, -1);
   }
 } catch (e) {
-  console.log('Error getting location for', entry.date, e);
+  console.error('Error getting location for', entry.date, e);
 }
 
 tr.innerHTML = `
@@ -719,17 +697,9 @@ tr.innerHTML = `
       if (jam.date === '01-17-2025' || jam.dbDate === '2025-01-17') {
         const orderIndex = jan17Order.indexOf(jam.song);
         jam.hardcodedOrder = orderIndex >= 0 ? orderIndex : 999;
-        console.log(`🔧 Hardcoded order for ${jam.song}: ${jam.hardcodedOrder}`);
       } else {
         jam.hardcodedOrder = 999; // Default high value for other shows
       }
-    });
-    
-    // Debug: Show the order for 2025-01-17
-    const jan17Jams = allJams.filter(j => j.dbDate === '2025-01-17');
-    console.log('🎪 2025-01-17 Jams with set order BEFORE sorting:');
-    jan17Jams.forEach(jam => {
-      console.log(`   "${jam.song}" - Set: ${jam.setOrder}, Position: ${jam.positionInSet}, Hardcoded: ${jam.hardcodedOrder}`);
     });
     
    // Force descending sort and hide flicker
@@ -750,12 +720,22 @@ tr.innerHTML = `
   });
 }
 
+function setYearFilter(year) {
+  yearFilter = year;
+  document.querySelectorAll('.year-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(`year-btn-${year}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  renderFilteredJams();
+}
+
 function renderFilteredJams(){
   const searchTerm = document.getElementById('search-input').value.toLowerCase();
   const filterVal = document.getElementById('filter-select').value;
 
   const filtered = allJams.filter(j=>{
     if(filterVal==='highlighted' && !j.highlighted) return false;
+    const jYear = (j.dbDate || j.date || '').slice(0, 4);
+    if(jYear !== yearFilter) return false;
     if(!searchTerm) return true;
     // Look up location for search
 let locationText = j.venue; // fallback
@@ -773,7 +753,7 @@ try {
     if (locationText.endsWith(',')) locationText = locationText.slice(0, -1);
   }
 } catch (e) {
-  console.log('Error getting location for search:', j.date, e);
+  console.error('Error getting location for search:', j.date, e);
 }
 
 return j.song.toLowerCase().includes(searchTerm) ||
@@ -796,15 +776,11 @@ function sortTable(column){
   if(currentSort.column===column) currentSort.direction = currentSort.direction==='asc'?'desc':'asc';
   else {currentSort.column=column; currentSort.direction='asc';}
 
-  console.log(`🔄 Sorting by ${column} ${currentSort.direction}`);
-  
   allJams.sort((a,b)=>{
     // HARDCODED ORDER for 2025-01-17 - FORCE this order regardless of other sorting
-    if ((a.date === '01-17-2025' || a.dbDate === '2025-01-17') && 
+    if ((a.date === '01-17-2025' || a.dbDate === '2025-01-17') &&
         (b.date === '01-17-2025' || b.dbDate === '2025-01-17')) {
-      const result = a.hardcodedOrder - b.hardcodedOrder;
-      console.log(`🔧 Hardcoded sort: "${a.song}" (${a.hardcodedOrder}) vs "${b.song}" (${b.hardcodedOrder}) = ${result}`);
-      return result;
+      return a.hardcodedOrder - b.hardcodedOrder;
     }
     
     let va=a[column], vb=b[column];
@@ -826,15 +802,8 @@ function sortTable(column){
       
       // If dates are equal, sort by set order and position in set
       if (va === vb) {
-        if (a.setOrder !== b.setOrder) {
-          console.log(`   Same date, different set order: "${a.song}" (set ${a.setOrder}) vs "${b.song}" (set ${b.setOrder})`);
-          return a.setOrder - b.setOrder;
-        }
-        if (a.positionInSet !== b.positionInSet) {
-          console.log(`   Same date and set, different position: "${a.song}" (pos ${a.positionInSet}) vs "${b.song}" (pos ${b.positionInSet})`);
-          return a.positionInSet - b.positionInSet;
-        }
-        console.log(`   Same date, set, and position: "${a.song}" vs "${b.song}"`);
+        if (a.setOrder !== b.setOrder) return a.setOrder - b.setOrder;
+        if (a.positionInSet !== b.positionInSet) return a.positionInSet - b.positionInSet;
         return 0;
       }
     } else if(column==='timing'){
@@ -853,22 +822,12 @@ function sortTable(column){
     }
     
     const result = currentSort.direction==='asc'? (va<vb?-1:va>vb?1:0) : (va<vb?1:va>vb?-1:0);
-    
-    if (column === 'date' && a.date === '01-17-2025' && b.date === '01-17-2025') {
-      console.log(`   Comparing "${a.song}" vs "${b.song}": ${result}`);
-    }
-    
     return result;
   });
 
   document.querySelectorAll('[id$="-sort"]').forEach(ind=>ind.textContent='');
   const curr=document.getElementById(currentSort.column+'-sort');
   if(curr) curr.textContent=currentSort.direction==='asc'?'▲':'▼';
-  
-  console.log('🎪 Final order for 2025-01-17:');
-  allJams.filter(j => j.date === '01-17-2025').forEach((jam, index) => {
-    console.log(`   ${index + 1}. "${jam.song}" - Hardcoded: ${jam.hardcodedOrder}`);
-  });
   
   renderFilteredJams();
 }
@@ -887,7 +846,7 @@ function cleanMarkdown(text) {
 }
 
 // Function to convert markdown to HTML with paragraph handling
-  function markdownToHtml(text) {
+function markdownToHtml(text) {
     if (!text) return '';
     
     // Split by double newlines to handle paragraphs
@@ -1213,17 +1172,11 @@ function showSetlistForDate(date) {
     dbDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
   
-  console.log('🔍 Looking for show with dbDate:', dbDate);
-  
   const show = dbShows[dbDate];
   if (!show) {
-    console.log('❌ No show data found for:', dbDate);
-    console.log('Available dates:', Object.keys(dbShows).filter(d => d.match(/^\d{4}-\d{2}-\d{2}/)).slice(0, 10));
     alert(`No setlist data found for ${date}`);
     return;
   }
-  
-  console.log('✅ Found show data:', show);
   
   // Get jam data for this date to check which songs are highlighted
   const jamEntries = allJams.filter(jam => {
@@ -1235,8 +1188,6 @@ function showSetlistForDate(date) {
         })());
     return jamDbDate === dbDate;
   });
-  
-  console.log(`🎵 Jam entries for ${dbDate}:`, jamEntries);
   
   // Find previous and next shows
   const allDates = Object.keys(dbShows).filter(d => d.match(/^\d{4}-\d{2}-\d{2}/)).sort();
@@ -1298,7 +1249,6 @@ function showSetlistForDate(date) {
        <div style="font-size: 1.1rem; margin-bottom: 0.3rem; text-align: left;"><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--text-color);">${show.venue}</span></div>
 <div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
        ${show.tour || show.show_number ? `<div style="color: var(--muted-color); font-size: 0.9rem; text-align: left;">${show.tour ? `<span class="clickable-tour" data-tour="${show.tour}" style="cursor: pointer; color: var(--muted-color);">${show.tour}</span>` : ''}${show.tour && show.show_number ? ' • ' : ''}${show.show_number ? `Show #${show.show_number}` : ''}</div>` : ''}
-        ${cleanRating && cleanRating !== 'tags:' ? `<div style="font-size: 0.95rem; margin-top: 0.5rem;">★ ${cleanRating}</div>` : ''}
       </div>
       
       <div style="margin-bottom: 1.5rem;">
@@ -1307,8 +1257,6 @@ function showSetlistForDate(date) {
   
     // Process each set - check if sets exist
   if (show.sets && Object.keys(show.sets).length > 0) {
-    console.log('🎪 Available sets:', Object.keys(show.sets));
-    
     const setOrder = ['Set 1', 'Set 2', 'Set 3', 'Encore'];
     const specialSections = ["Chuck's Dream"];
     
@@ -1316,7 +1264,6 @@ function showSetlistForDate(date) {
     
     setOrder.forEach(setName => {
       if (show.sets[setName]) {
-        console.log(`🎪 Processing ${setName}:`, show.sets[setName]);
         const processedContent = makeAllSongsClickable(show.sets[setName], jamEntries);
         content += `<div style="margin-bottom: 0.75rem;"><strong>${setName}:</strong> ${processedContent}</div>`;
         
@@ -1339,7 +1286,6 @@ function showSetlistForDate(date) {
       }
     });
   } else {
-    console.log('❌ No sets found in show data');
     content += `<div style="text-align: center; color: var(--muted-color); padding: 2rem;">No setlist data available for this show</div>`;
   }
   
@@ -1690,14 +1636,6 @@ function renderDbSongs() {
   
   let sortedSongs = Object.entries(dbSongs);
   
-  // DEBUG: Check if Chuck's Dream is in the database
-  console.log("=== DEBUG: Checking for Chuck's Dream in dbSongs ===");
-  sortedSongs.forEach(([norm, data]) => {
-    if (data.name.toLowerCase().includes("chuck") || norm.includes("chuck")) {
-      console.log("FOUND CHUCK'S DREAM:", data.name, "norm:", norm);
-    }
-  });
-  
   // Apply sorting
   const sort = dbSortState.songs;
   sortedSongs.sort((a, b) => {
@@ -1733,7 +1671,6 @@ function renderDbSongs() {
         songNameLower.includes("chucks dream") ||
         normLower.includes("chuck") ||
         songNameLower.includes("chuck")) {
-      console.log("FILTERING OUT:", data.name, "norm:", norm);
       return; // Skip this song entirely
     }
     
@@ -2087,10 +2024,6 @@ function showLocationShows(type, value) {
   let shows = [];
   let title = '';
   
-  console.log('=== showLocationShows DEBUG ===');
-  console.log('Type:', type);
-  console.log('Value:', value);
-  
   // Find shows based on location type
   if (type === 'venue') {
     shows = dbDates.filter(date => {
@@ -2111,8 +2044,6 @@ function showLocationShows(type, value) {
     });
     title = `Shows in ${value}`;
   }
-  
-  console.log(`Found ${shows.length} shows for ${type}: ${value}`);
   
   if (shows.length === 0) {
     console.error('❌ No shows found for:', type, value);
@@ -2182,9 +2113,6 @@ function renderLocationShowsTable(shows, title, type, value) {
   
   // Sort shows by date (oldest first for gap calculation)
   const sortedShows = [...shows].sort((a, b) => new Date(a) - new Date(b));
-  
-  console.log('Rendering location shows table for:', title);
-  console.log('Total shows:', sortedShows.length);
   
   sortedShows.forEach((date, index) => {
     const show = dbShows[date];
@@ -2457,7 +2385,6 @@ document.addEventListener('click', e => {
     // Check for venue click
     const venueAttr = target.getAttribute('data-venue');
     if (venueAttr) {
-      console.log('Venue clicked from stats:', venueAttr);
       showLocationShows('venue', venueAttr);
       return;
     }
@@ -2465,7 +2392,6 @@ document.addEventListener('click', e => {
     // Check for location click (city, state combo)
     const locationAttr = target.getAttribute('data-location');
     if (locationAttr) {
-      console.log('Location clicked from stats:', locationAttr);
       // For combined location, we need to split city and state
       const [city, state] = locationAttr.split(',').map(s => s.trim());
       if (city) {
@@ -2477,7 +2403,6 @@ document.addEventListener('click', e => {
     // Check for tour click
     const tourAttr = target.getAttribute('data-tour');
     if (tourAttr && tourAttr !== '-') {
-      console.log('Tour clicked from stats:', tourAttr);
       showTourShows(tourAttr);
       return;
     }
@@ -2529,13 +2454,10 @@ function showSongDetail(normSongName) {
   
   const song = dbSongs[normSongName];
   if (!song) {
-    console.log("❌ Song not found in dbSongs:", normSongName);
+    console.error("Song not found in dbSongs:", normSongName);
     return;
   }
-  
-  console.log("🔄 showSongDetail called with:", normSongName);
-  console.log("Song data:", song);
-  
+
   currentSongDetail = { norm: normSongName, data: song };
   
   // Update header info
@@ -2789,7 +2711,6 @@ function renderSongDetailTable() {
       venueElement.addEventListener('click', function(e) {
         e.stopPropagation();
         const venueName = this.getAttribute('data-venue');
-        console.log('Venue clicked:', venueName);
         showLocationShows('venue', venueName);
       });
     });
@@ -2799,7 +2720,6 @@ function renderSongDetailTable() {
       songElement.addEventListener('click', function(e) {
         e.stopPropagation();
         const songName = this.getAttribute('data-song');
-        console.log('Song clicked:', songName);
         
         // Find the song in the database
         const normSearch = normalizeSongName(songName);
@@ -2815,7 +2735,6 @@ function renderSongDetailTable() {
           if (similarSong) {
             showSongDetail(similarSong);
           } else {
-            console.log(`Song "${songName}" not found in database`);
             // Fallback: search in the main song list
             document.getElementById('db-song-search').value = songName;
             switchDbTab('songs');
@@ -2825,9 +2744,6 @@ function renderSongDetailTable() {
       });
     });
   }, 0);
-  
-  console.log('About to render', performances.length, 'performances');
-  console.log('First 3 performances:', performances.slice(0, 3));
   
   if (performances.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted-color);">No performances found in setlists for this song</td></tr>';
@@ -2923,15 +2839,12 @@ function showRandomSetlist() {
 document.addEventListener('DOMContentLoaded', function() {
   // Define loadShowsDatabase function
   function loadShowsDatabase() {
-    console.log('Loading shows_database.json...');
     fetch('shows_database.json')
       .then(r => {
-        console.log('Shows database response:', r.status);
         if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
         return r.json();
       })
       .then(data => {
-        console.log('Shows database loaded:', Object.keys(data).length, 'shows');
         
         // Clean the date keys - normalize dates with /1, /2 suffixes
         const cleanedData = {};
@@ -3146,10 +3059,10 @@ function resetToDefaultPage() {
   // Reset filters and search
   document.getElementById("search-input").value = "";
   document.getElementById("filter-select").value = "all";
+  setYearFilter("2026");
 
   // Re-sort and render
   sortTable("date");
-  renderFilteredJams();
 
   // Update tab button highlight
   document.querySelectorAll(".page-tab").forEach(btn => btn.classList.remove("active"));
@@ -3236,7 +3149,6 @@ function showObsidianSetlistByDate(date) {
         <div style="font-size: 1.1rem; margin-bottom: 0.3rem; text-align: left;"><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--text-color);">${show.venue}</span></div>
 <div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
         ${show.tour || show.show_number ? `<div style="color: var(--muted-color); font-size: 0.9rem; text-align: left;">${show.tour ? `<span class="clickable-tour" data-tour="${show.tour}" style="cursor: pointer; color: var(--muted-color);">${show.tour}</span>` : ''}${show.tour && show.show_number ? ' • ' : ''}${show.show_number ? `Show #${show.show_number}` : ''}</div>` : ''}
-        ${cleanRating && cleanRating !== 'tags:' ? `<div style="font-size: 0.95rem; margin-top: 0.5rem;">★ ${cleanRating}</div>` : ''}
       </div>
       
       <div style="margin-bottom: 1.5rem;">
