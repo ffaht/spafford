@@ -21,11 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .site-header h1{font-size:2.5rem;margin-bottom:0.5rem;}
 .site-header p{color:var(--muted-color);}
 .site-disclaimer{font-size:0.85rem;font-style:italic;margin-top:0.5rem;}
-.search-container{display:flex;gap:1rem;margin-bottom:0.75rem;align-items:center;}
-.year-filter-container{display:flex;gap:0.5rem;margin-bottom:1.5rem;}
-.year-btn{padding:0.4rem 1.1rem;border-radius:999px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--muted-color);font-size:0.85rem;cursor:pointer;transition:all 0.15s ease;}
-.year-btn:hover{border-color:var(--yellow);color:var(--yellow);}
-.year-btn.active{background:transparent;border-color:var(--yellow);color:var(--yellow);font-weight:600;}
+.search-container{display:flex;gap:1rem;margin-bottom:2rem;align-items:center;}
 #search-input{flex:1;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
 #filter-select{padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);}
 .search-container input[type="text"]{flex:1;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
@@ -244,8 +240,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <body>
 <header class="site-header">
 <div class="container">
-<h1>Spaffworld, Baby</h1>
-<p>😀 😂 😊 😎 😜</p>
+<h1 onclick="goToLatestSetlist()" style="cursor:pointer;">Spaffworld, Baby</h1>
+<p onclick="goToLatestSetlist()" style="cursor:pointer;">😀 😂 😊 😎 😜</p>
 <p class="site-disclaimer">This is just a personal project! <br> Some setlist data is provided by spaffnerds.com</p>
 <div class="tab-nav" style="margin-top:0.5rem;justify-content:center;">
 <button class="tab-button page-tab" onclick="switchPage('jams')">Jam Chart</button>
@@ -284,10 +280,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <option value="all">All Jams</option>
   <option value="highlighted">Highlighted</option>
 </select>
-</div>
-<div class="year-filter-container">
-  <button class="year-btn" onclick="setYearFilter('2025')" id="year-btn-2025">2025</button>
-  <button class="year-btn active" onclick="setYearFilter('2026')" id="year-btn-2026">2026</button>
 </div>
 <div class="jam-table-container">
 <table class="jam-table">
@@ -388,13 +380,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <h3 style="margin-bottom:1rem;">Calculate Gaps</h3>
       
       <div style="margin-bottom:1.5rem;">
-        <label style="display:block;margin-bottom:0.5rem;font-weight:600;">First Show Date (YYYY-MM-DD):</label>
-        <input type="text" id="db-gap-date1" placeholder="e.g., 2024-01-15" style="width:100%;padding:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);">
+        <label style="display:block;margin-bottom:0.5rem;font-weight:600;">First Show Date (MM/DD/YYYY):</label>
+        <input type="text" id="db-gap-date1" placeholder="e.g., 01/15/2024" style="width:100%;padding:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);">
       </div>
-      
+
       <div style="margin-bottom:1.5rem;">
-        <label style="display:block;margin-bottom:0.5rem;font-weight:600;">Second Show Date (YYYY-MM-DD):</label>
-        <input type="text" id="db-gap-date2" placeholder="e.g., 2024-03-20" style="width:100%;padding:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);">
+        <label style="display:block;margin-bottom:0.5rem;font-weight:600;">Second Show Date (MM/DD/YYYY):</label>
+        <input type="text" id="db-gap-date2" placeholder="e.g., 03/20/2024" style="width:100%;padding:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);">
       </div>
       
       <button class="btn-search" style="margin-top:1rem;width:100%;" onclick="calculateShowDateGap()">Calculate Gap</button>
@@ -446,7 +438,8 @@ let allJams = [];
 let currentSort = {column:'date',direction:'desc'};
 const tableBody = document.getElementById('jam-table-body');
 let currentTooltip = null;
-let yearFilter = '2026';
+let longPressTimer = null;
+let longPressTriggered = false;
 
 // Add normalizeSongName function here, before it's used in processShowsDatabase
 function normalizeSongName(s) {
@@ -468,6 +461,7 @@ function normalizeSongName(s) {
 
   // Handle special multi-part titles
   if (/smooth.*relax.*down/i.test(s)) return "smooth relax down";
+  if (/lights\s+out.*words\s+gone/i.test(s)) return "lights out words gone";
   if (/motel(\s*6)?/i.test(s)) return "motel 6";
   if (/april.*1992.*miami/i.test(s)) return "april 29 1992 miami";
 
@@ -509,9 +503,14 @@ function formatDateForDisplay(dateStr) {
 }
 
 function loadJams(){
+  console.log('Loading jams.json...');
   fetch('jams.json')
-  .then(r=>r.json())
+  .then(r=>{
+    console.log('Jams response:', r.status);
+    return r.json();
+  })
   .then(data=>{
+    console.log('Jams loaded:', data.length, 'entries');
     
     // Process jams to add setlist order information
     const processedJams = [];
@@ -541,6 +540,14 @@ function loadJams(){
       if (dbShows[dbDate]) {
         const show = dbShows[dbDate];
         const sets = show.sets || {};
+        
+        // Only log for specific dates to reduce console spam
+        const debugDate = dbDate === '2025-06-13' || dbDate === '2025-01-17';
+        
+        if (debugDate) {
+          console.log(`🔍 Checking date: ${dbDate} for song "${entry.song}"`);
+          console.log('Available sets:', Object.keys(sets));
+        }
         
         // Create an array of set entries and sort them by set order
         const setEntries = Object.entries(sets);
@@ -604,6 +611,9 @@ function loadJams(){
               
               positionInSet = songIndex;
               
+              if (debugDate) {
+                console.log(`✅ FOUND: "${entry.song}" in ${setName} at position ${positionInSet} (order: ${setOrder}, timing: ${jamTiming}→${setlistTiming})`);
+              }
               break;
             }
           }
@@ -611,6 +621,10 @@ function loadJams(){
         }
         
         if (!found) {
+          if (debugDate) {
+            console.log(`❌ NOT FOUND: "${entry.song}" (${jamTiming}min) in any set for ${dbDate}`);
+          }
+          
           // Fallback: Try aggressive partial matching (for edge cases)
           for (const [setName, setContent] of setEntries) {
             const songs = parseDbSetlist(setContent);
@@ -620,6 +634,9 @@ function loadJams(){
               
               // Check if either string contains the other
               if (setlistSongNorm.includes(jamSongNorm) || jamSongNorm.includes(setlistSongNorm)) {
+                if (debugDate) {
+                  console.log(`🔄 PARTIAL MATCH: "${entry.song}" ≈ "${setlistSong}"`);
+                }
                 found = true;
                 foundSetName = setName;
                 
@@ -634,11 +651,19 @@ function loadJams(){
                 }
                 
                 positionInSet = songIndex;
+                
+                if (debugDate) {
+                  console.log(`✅ AGGRESSIVE FOUND: "${entry.song}" in set ${setName} at position ${positionInSet}`);
+                }
                 break;
               }
             }
             if (found) break;
           }
+        }
+      } else {
+        if (debugDate) {
+          console.log(`❌ NO SHOW DATA: No show data for date ${dbDate}`);
         }
       }
       
@@ -669,7 +694,7 @@ try {
     if (locationText.endsWith(',')) locationText = locationText.slice(0, -1);
   }
 } catch (e) {
-  console.error('Error getting location for', entry.date, e);
+  console.log('Error getting location for', entry.date, e);
 }
 
 tr.innerHTML = `
@@ -697,9 +722,17 @@ tr.innerHTML = `
       if (jam.date === '01-17-2025' || jam.dbDate === '2025-01-17') {
         const orderIndex = jan17Order.indexOf(jam.song);
         jam.hardcodedOrder = orderIndex >= 0 ? orderIndex : 999;
+        console.log(`🔧 Hardcoded order for ${jam.song}: ${jam.hardcodedOrder}`);
       } else {
         jam.hardcodedOrder = 999; // Default high value for other shows
       }
+    });
+    
+    // Debug: Show the order for 2025-01-17
+    const jan17Jams = allJams.filter(j => j.dbDate === '2025-01-17');
+    console.log('🎪 2025-01-17 Jams with set order BEFORE sorting:');
+    jan17Jams.forEach(jam => {
+      console.log(`   "${jam.song}" - Set: ${jam.setOrder}, Position: ${jam.positionInSet}, Hardcoded: ${jam.hardcodedOrder}`);
     });
     
    // Force descending sort and hide flicker
@@ -720,22 +753,12 @@ tr.innerHTML = `
   });
 }
 
-function setYearFilter(year) {
-  yearFilter = year;
-  document.querySelectorAll('.year-btn').forEach(btn => btn.classList.remove('active'));
-  const activeBtn = document.getElementById(`year-btn-${year}`);
-  if (activeBtn) activeBtn.classList.add('active');
-  renderFilteredJams();
-}
-
 function renderFilteredJams(){
   const searchTerm = document.getElementById('search-input').value.toLowerCase();
   const filterVal = document.getElementById('filter-select').value;
 
   const filtered = allJams.filter(j=>{
     if(filterVal==='highlighted' && !j.highlighted) return false;
-    const jYear = (j.dbDate || j.date || '').slice(0, 4);
-    if(jYear !== yearFilter) return false;
     if(!searchTerm) return true;
     // Look up location for search
 let locationText = j.venue; // fallback
@@ -753,7 +776,7 @@ try {
     if (locationText.endsWith(',')) locationText = locationText.slice(0, -1);
   }
 } catch (e) {
-  console.error('Error getting location for search:', j.date, e);
+  console.log('Error getting location for search:', j.date, e);
 }
 
 return j.song.toLowerCase().includes(searchTerm) ||
@@ -776,11 +799,15 @@ function sortTable(column){
   if(currentSort.column===column) currentSort.direction = currentSort.direction==='asc'?'desc':'asc';
   else {currentSort.column=column; currentSort.direction='asc';}
 
+  console.log(`🔄 Sorting by ${column} ${currentSort.direction}`);
+  
   allJams.sort((a,b)=>{
     // HARDCODED ORDER for 2025-01-17 - FORCE this order regardless of other sorting
-    if ((a.date === '01-17-2025' || a.dbDate === '2025-01-17') &&
+    if ((a.date === '01-17-2025' || a.dbDate === '2025-01-17') && 
         (b.date === '01-17-2025' || b.dbDate === '2025-01-17')) {
-      return a.hardcodedOrder - b.hardcodedOrder;
+      const result = a.hardcodedOrder - b.hardcodedOrder;
+      console.log(`🔧 Hardcoded sort: "${a.song}" (${a.hardcodedOrder}) vs "${b.song}" (${b.hardcodedOrder}) = ${result}`);
+      return result;
     }
     
     let va=a[column], vb=b[column];
@@ -802,8 +829,15 @@ function sortTable(column){
       
       // If dates are equal, sort by set order and position in set
       if (va === vb) {
-        if (a.setOrder !== b.setOrder) return a.setOrder - b.setOrder;
-        if (a.positionInSet !== b.positionInSet) return a.positionInSet - b.positionInSet;
+        if (a.setOrder !== b.setOrder) {
+          console.log(`   Same date, different set order: "${a.song}" (set ${a.setOrder}) vs "${b.song}" (set ${b.setOrder})`);
+          return a.setOrder - b.setOrder;
+        }
+        if (a.positionInSet !== b.positionInSet) {
+          console.log(`   Same date and set, different position: "${a.song}" (pos ${a.positionInSet}) vs "${b.song}" (pos ${b.positionInSet})`);
+          return a.positionInSet - b.positionInSet;
+        }
+        console.log(`   Same date, set, and position: "${a.song}" vs "${b.song}"`);
         return 0;
       }
     } else if(column==='timing'){
@@ -822,12 +856,22 @@ function sortTable(column){
     }
     
     const result = currentSort.direction==='asc'? (va<vb?-1:va>vb?1:0) : (va<vb?1:va>vb?-1:0);
+    
+    if (column === 'date' && a.date === '01-17-2025' && b.date === '01-17-2025') {
+      console.log(`   Comparing "${a.song}" vs "${b.song}": ${result}`);
+    }
+    
     return result;
   });
 
   document.querySelectorAll('[id$="-sort"]').forEach(ind=>ind.textContent='');
   const curr=document.getElementById(currentSort.column+'-sort');
   if(curr) curr.textContent=currentSort.direction==='asc'?'▲':'▼';
+  
+  console.log('🎪 Final order for 2025-01-17:');
+  allJams.filter(j => j.date === '01-17-2025').forEach((jam, index) => {
+    console.log(`   ${index + 1}. "${jam.song}" - Hardcoded: ${jam.hardcodedOrder}`);
+  });
   
   renderFilteredJams();
 }
@@ -846,7 +890,7 @@ function cleanMarkdown(text) {
 }
 
 // Function to convert markdown to HTML with paragraph handling
-function markdownToHtml(text) {
+  function markdownToHtml(text) {
     if (!text) return '';
     
     // Split by double newlines to handle paragraphs
@@ -888,12 +932,22 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
     return cleanedString;
   }
   
+  // Protect song titles containing commas before splitting
+  const protectedString = cleanedString
+    .replace(/Smooth[,\s]*Relax[,\s]*Down/gi, '|||SMOOTH_RELAX_DOWN|||')
+    .replace(/Lights\s+Out[,\s]*Words\s+Gone/gi, '|||LIGHTS_OUT_WORDS_GONE|||')
+    .replace(/April\s*29[,\s]*1992[^)]*Miami/gi, '|||APRIL_MIAMI|||');
+
   // Pre-process: Build a list of all songs in order with their normalized names
-  const tokens = cleanedString.split(/(\s*->\s*|\s*>\s*|\s*,\s*)/g);
+  const tokens = protectedString.split(/(\s*->\s*|\s*>\s*|\s*,\s*)/g);
   const songList = [];
-  
+
   for (let token of tokens) {
     if (/^\s*(->|>|,)\s*$/.test(token)) continue;
+    token = token
+      .replace(/\|\|\|SMOOTH_RELAX_DOWN\|\|\|/g, 'Smooth, Relax, Down')
+      .replace(/\|\|\|LIGHTS_OUT_WORDS_GONE\|\|\|/g, 'Lights Out, Words Gone')
+      .replace(/\|\|\|APRIL_MIAMI\|\|\|/g, 'April 29, 1992 (Miami)');
     if (token.toLowerCase().includes("chuck's dream")) continue;
     
     const timingMatch = token.match(/\((\d+)\)\s*$/);
@@ -913,33 +967,23 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
     const jamNorm = normalizeSongName(jam.song);
     const jamTimingMatch = (jam.timing || '').match(/(\d+):/);
     const jamMinutes = jamTimingMatch ? parseInt(jamTimingMatch[1]) : null;
-
-    // Collect all setlist positions for this song in order
-    const occurrencePositions = [];
+    
+    // Find all occurrences of this song in the setlist
+    let occurrenceIndex = 0;
     for (let i = 0; i < songList.length; i++) {
       if (songList[i].normalized === jamNorm) {
-        occurrencePositions.push(i);
-      }
-    }
-
-    let targetIdx;
-    if (jam.occurrence != null && jam.occurrence >= 1) {
-      // Explicit 1-indexed occurrence overrides timing-based matching
-      targetIdx = jam.occurrence - 1;
-    } else {
-      // Fall back to timing-based matching: first unassigned occurrence within 2 min
-      targetIdx = occurrencePositions.findIndex((songIdx, idx) => {
-        const mapKey = `${jamNorm}_${idx}`;
-        if (jamEntryMap.has(mapKey)) return false;
-        const setlistTiming = songList[songIdx].timingNumber;
-        return setlistTiming && jamMinutes && Math.abs(setlistTiming - jamMinutes) <= 2;
-      });
-    }
-
-    if (targetIdx >= 0 && targetIdx < occurrencePositions.length) {
-      const mapKey = `${jamNorm}_${targetIdx}`;
-      if (!jamEntryMap.has(mapKey)) {
-        jamEntryMap.set(mapKey, jam);
+        const setlistTiming = songList[i].timingNumber;
+        const mapKey = `${jamNorm}_${occurrenceIndex}`;
+        
+        // If this occurrence doesn't have a jam entry yet, check if timing matches
+        if (!jamEntryMap.has(mapKey)) {
+          if (setlistTiming && jamMinutes && Math.abs(setlistTiming - jamMinutes) <= 2) {
+            jamEntryMap.set(mapKey, jam);
+            break; // This jam entry is now assigned
+          }
+        }
+        
+        occurrenceIndex++;
       }
     }
   });
@@ -954,6 +998,12 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
       output += token;
       continue;
     }
+
+    // Restore protected names (songs with commas in their titles)
+    token = token
+      .replace(/\|\|\|SMOOTH_RELAX_DOWN\|\|\|/g, 'Smooth, Relax, Down')
+      .replace(/\|\|\|LIGHTS_OUT_WORDS_GONE\|\|\|/g, 'Lights Out, Words Gone')
+      .replace(/\|\|\|APRIL_MIAMI\|\|\|/g, 'April 29, 1992 (Miami)');
 
     // Skip if this token contains Chuck's Dream
     if (token.toLowerCase().includes("chuck's dream")) {
@@ -993,14 +1043,15 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
     const safeSong = songOnly.replace(/"/g, '&quot;');
 
     if (matchedJam) {
+      // Inject clickable span around the song portion only (leave timing & spaces untouched)
       output += token.replace(
         songOnly.trim(),
-        `<span class="clickable-song jam-song" data-song="${safeSong}" data-timing="${timingNumber || ''}" data-jam="true" data-occurrence="${currentOccurrence}">${songOnly.trim()}</span>`
+        `<span class="clickable-song jam-song" data-song="${safeSong}" data-timing="${timingNumber || ''}" data-jam="true">${songOnly.trim()}</span>`
       );
     } else {
       output += token.replace(
         songOnly.trim(),
-        `<span class="clickable-song" data-song="${safeSong}" data-timing="${timingNumber || ''}" data-jam="false" data-occurrence="${currentOccurrence}">${songOnly.trim()}</span>`
+        `<span class="clickable-song" data-song="${safeSong}" data-timing="${timingNumber || ''}" data-jam="false">${songOnly.trim()}</span>`
       );
     }
   }
@@ -1008,152 +1059,171 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
   return output;
 }
 
-function setupSongInteractions(containerSelector, jamEntries) {
+function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
   setTimeout(() => {
-    const containerEl = document.getElementById(containerSelector);
-    if (!containerEl) return;
+    const container = containerSelector
+      ? document.getElementById(containerSelector)
+      : document;
 
-    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    let currentTooltip = null;
+    const isTouchDevice =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-    function removeTooltip() {
-      if (currentTooltip) { currentTooltip.remove(); currentTooltip = null; }
-    }
+    const removeTooltip = () => {
+      if (currentTooltip) {
+        currentTooltip.remove();
+        currentTooltip = null;
+      }
+    };
 
-    function showTooltip(el, jamEntry) {
+    const showTooltip = (songElement, jamEntry) => {
       removeTooltip();
-      const timing = jamEntry.timing || '';
-      const notes = jamEntry.notes ? jamEntry.notes.replace(/<[^>]*>/g, '').trim() : '';
-      if (!timing && !notes) return;
 
-      const tooltip = document.createElement('div');
-      tooltip.className = 'jam-song-tooltip show';
-      tooltip.dataset.song = el.dataset.song;
-      let html = '';
-      if (timing) html += `<div class="jam-song-tooltip-timing">${timing}</div>`;
-      if (notes) html += `<div class="jam-song-tooltip-notes">${notes}</div>`;
-      tooltip.innerHTML = html;
+      const tooltip = document.createElement("div");
+      tooltip.className = "jam-song-tooltip show";
+      tooltip.dataset.song = songElement.dataset.song;
+
+      tooltip.innerHTML = `
+        ${jamEntry.timing ? `<div class="jam-song-tooltip-timing">${jamEntry.timing}</div>` : ""}
+        ${jamEntry.notes ? `<div class="jam-song-tooltip-notes">${jamEntry.notes}</div>` : ""}
+      `;
+
       document.body.appendChild(tooltip);
 
-      const rect = el.getBoundingClientRect();
+      const rect = songElement.getBoundingClientRect();
       const tw = tooltip.offsetWidth;
       const th = tooltip.offsetHeight;
+
       let top = rect.bottom + 8;
       let left = rect.left + rect.width / 2 - tw / 2;
+
       if (left < 8) left = 8;
       if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
       if (top + th > window.innerHeight - 8) top = rect.top - th - 8;
+
       tooltip.style.top = `${top}px`;
       tooltip.style.left = `${left}px`;
+
       currentTooltip = tooltip;
-    }
+    };
 
-    function resolveJamEntry(possible, elementOccurrence, elementTimingNumber) {
-      if (possible.length === 1) return possible[0];
-      // Explicit occurrence field takes priority (1-indexed in data, 0-indexed in DOM)
-      const byOccurrence = possible.find(j => j.occurrence != null && (j.occurrence - 1) === elementOccurrence);
-      if (byOccurrence) return byOccurrence;
-      // Fall back to timing proximity
-      if (elementTimingNumber) {
-        return possible.find(j => {
-          const m = (j.timing || '').match(/(\d+):/);
-          return m && Math.abs(parseInt(m[1]) - elementTimingNumber) <= 1;
-        }) || null;
+    // Close tooltip on outside interaction
+    document.addEventListener("click", e => {
+      if (
+        !e.target.closest(".jam-song") &&
+        !e.target.closest(".jam-song-tooltip")
+      ) {
+        removeTooltip();
       }
-      return null;
-    }
+    });
 
-    // Dismiss tooltip on outside interaction
-    if (isTouchDevice) {
-      document.addEventListener('touchend', e => {
-        if (!e.target.closest('.jam-song') && !e.target.closest('.jam-song-tooltip')) removeTooltip();
-      }, { passive: true });
-    } else {
-      document.addEventListener('click', e => {
-        if (!e.target.closest('.jam-song') && !e.target.closest('.jam-song-tooltip')) removeTooltip();
-      });
-    }
+    document.addEventListener(
+      "touchstart",
+      e => {
+        if (
+          !e.target.closest(".jam-song") &&
+          !e.target.closest(".jam-song-tooltip")
+        ) {
+          removeTooltip();
+        }
+      },
+      { passive: true }
+    );
 
-    containerEl.querySelectorAll('.clickable-song').forEach(songElement => {
-      if (songElement.hasAttribute('data-venue') || songElement.hasAttribute('data-city') ||
-          songElement.hasAttribute('data-state') || songElement.hasAttribute('data-tour')) return;
+    // Attach handlers to each song
+    container.querySelectorAll(".clickable-song").forEach(songElement => {
+      const songName = songElement.dataset.song?.trim();
+      const isJamCharted = songElement.dataset.jam === "true";
 
-      const songName = (songElement.getAttribute('data-song') || '').trim();
       if (!songName) return;
 
-      const isJamCharted = songElement.getAttribute('data-jam') === 'true';
-      const elementOccurrence = parseInt(songElement.getAttribute('data-occurrence') || '0');
-      const elementTimingNumber = parseInt(songElement.getAttribute('data-timing')) || null;
+      const matchingEntry = isJamCharted
+        ? jamEntries.find(
+            j => normalizeSongName(j.song) === normalizeSongName(songName)
+          )
+        : null;
 
-      const possible = isJamCharted
-        ? jamEntries.filter(j => normalizeSongName(j.song) === normalizeSongName(songName))
-        : [];
-      const bestJamEntry = possible.length ? resolveJamEntry(possible, elementOccurrence, elementTimingNumber) : null;
+      // Base styles
+      songElement.style.cursor = "pointer";
+      songElement.style.userSelect = "none";
+      songElement.style.webkitTapHighlightColor = "transparent";
 
-      songElement.style.cursor = 'pointer';
-      songElement.style.userSelect = 'none';
-      songElement.style.webkitTapHighlightColor = 'transparent';
-      songElement.style.color = isJamCharted ? 'var(--yellow)' : 'var(--text-color)';
-      if (bestJamEntry?.highlighted) songElement.style.fontWeight = 'bold';
+      /* ===========================
+         MOBILE — LONG PRESS ONLY
+         =========================== */
+      if (isTouchDevice && isJamCharted && matchingEntry) {
+        songElement.addEventListener(
+  "touchstart",
+  () => {
+    longPressTriggered = false;
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      showTooltip(songElement, matchingEntry);
+    }, 500);
+  },
+  { passive: true }
+);
 
-      if (isTouchDevice) {
-        if (isJamCharted && bestJamEntry) {
-          songElement.addEventListener('touchend', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (currentTooltip && currentTooltip.dataset.song === songName) {
-              removeTooltip();
-            } else {
-              showTooltip(songElement, bestJamEntry);
-            }
-          }, { passive: false });
-        } else {
-          songElement.addEventListener('click', e => {
-            e.stopPropagation();
-            const normalized = normalizeSongName(songName);
-            const similar = !dbSongs[normalized] && Object.keys(dbSongs).find(k =>
-              normalizeSongName(k).includes(normalized) || normalized.includes(normalizeSongName(k))
-            );
-            if (dbSongs[normalized]) showSongDetail(normalized);
-            else if (similar) showSongDetail(similar);
-            else { switchPageByName('stats'); document.getElementById('db-song-search').value = songName; filterDbSongs(); }
-          });
-        }
-      } else {
-        songElement.addEventListener('click', e => {
-          e.stopPropagation();
-          if (isJamCharted) {
-            switchPageByName('jams');
-            document.getElementById('search-input').value = songName;
-            renderFilteredJams();
-          } else {
-            const normalized = normalizeSongName(songName);
-            const similar = !dbSongs[normalized] && Object.keys(dbSongs).find(k =>
-              normalizeSongName(k).includes(normalized) || normalized.includes(normalizeSongName(k))
-            );
-            if (dbSongs[normalized]) showSongDetail(normalized);
-            else if (similar) showSongDetail(similar);
-            else { switchPageByName('stats'); document.getElementById('db-song-search').value = songName; filterDbSongs(); }
-          }
+
+        songElement.addEventListener("touchend", () => {
+          clearTimeout(longPressTimer);
         });
-        if (isJamCharted && bestJamEntry) {
-          songElement.addEventListener('mouseenter', () => showTooltip(songElement, bestJamEntry));
-          songElement.addEventListener('mouseleave', removeTooltip);
-        }
-      }
-    });
 
-    containerEl.querySelectorAll('.clickable-venue').forEach(el => {
-      el.addEventListener('click', e => { e.stopPropagation(); showLocationShows('venue', el.getAttribute('data-venue')); });
-    });
-    containerEl.querySelectorAll('.clickable-city').forEach(el => {
-      el.addEventListener('click', e => { e.stopPropagation(); showLocationShows('city', el.getAttribute('data-city')); });
-    });
-    containerEl.querySelectorAll('.clickable-state').forEach(el => {
-      el.addEventListener('click', e => { e.stopPropagation(); showLocationShows('state', el.getAttribute('data-state')); });
-    });
-    containerEl.querySelectorAll('.clickable-tour').forEach(el => {
-      el.addEventListener('click', e => { e.stopPropagation(); showTourShows(el.getAttribute('data-tour')); });
+        songElement.addEventListener("touchmove", () => {
+          clearTimeout(longPressTimer);
+        });
+
+        // Suppress navigation if long-press fired
+       songElement.addEventListener("click", e => {
+  if (longPressTriggered) {
+    // Long-press = tooltip only
+    e.preventDefault();
+    e.stopPropagation();
+    longPressTriggered = false;
+    return;
+  }
+
+  // Short tap = navigate to jam chart
+  switchPageByName("jams");
+  document.getElementById("search-input").value = songName;
+  renderFilteredJams();
+});
+
+
+        return; // ⛔️ do NOT bind desktop click behavior
+      }
+
+      /* ===========================
+         DESKTOP + NON-JAM SONGS
+         =========================== */
+      songElement.addEventListener("click", e => {
+        e.stopPropagation();
+
+        if (isJamCharted) {
+          switchPageByName("jams");
+          document.getElementById("search-input").value = songName;
+          renderFilteredJams();
+        } else {
+          const normalized = normalizeSongName(songName);
+          if (dbSongs[normalized]) {
+            showSongDetail(normalized);
+          } else {
+            switchPageByName("stats");
+            document.getElementById("db-song-search").value = songName;
+            filterDbSongs();
+          }
+        }
+      });
+
+      // Desktop hover tooltip
+      if (!isTouchDevice && isJamCharted && matchingEntry) {
+        songElement.addEventListener("mouseenter", () => {
+          showTooltip(songElement, matchingEntry);
+        });
+
+        songElement.addEventListener("mouseleave", () => {
+          removeTooltip();
+        });
+      }
     });
   }, 0);
 }
@@ -1172,11 +1242,17 @@ function showSetlistForDate(date) {
     dbDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
   
+  console.log('🔍 Looking for show with dbDate:', dbDate);
+  
   const show = dbShows[dbDate];
   if (!show) {
+    console.log('❌ No show data found for:', dbDate);
+    console.log('Available dates:', Object.keys(dbShows).filter(d => d.match(/^\d{4}-\d{2}-\d{2}/)).slice(0, 10));
     alert(`No setlist data found for ${date}`);
     return;
   }
+  
+  console.log('✅ Found show data:', show);
   
   // Get jam data for this date to check which songs are highlighted
   const jamEntries = allJams.filter(jam => {
@@ -1188,6 +1264,8 @@ function showSetlistForDate(date) {
         })());
     return jamDbDate === dbDate;
   });
+  
+  console.log(`🎵 Jam entries for ${dbDate}:`, jamEntries);
   
   // Find previous and next shows
   const allDates = Object.keys(dbShows).filter(d => d.match(/^\d{4}-\d{2}-\d{2}/)).sort();
@@ -1250,13 +1328,15 @@ function showSetlistForDate(date) {
 <div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
        ${show.tour || show.show_number ? `<div style="color: var(--muted-color); font-size: 0.9rem; text-align: left;">${show.tour ? `<span class="clickable-tour" data-tour="${show.tour}" style="cursor: pointer; color: var(--muted-color);">${show.tour}</span>` : ''}${show.tour && show.show_number ? ' • ' : ''}${show.show_number ? `Show #${show.show_number}` : ''}</div>` : ''}
       </div>
-      
+
       <div style="margin-bottom: 1.5rem;">
         <div style="line-height: 1.6; color: var(--text-color); font-size: 0.95rem;">
   `;
-  
+
     // Process each set - check if sets exist
   if (show.sets && Object.keys(show.sets).length > 0) {
+    console.log('🎪 Available sets:', Object.keys(show.sets));
+    
     const setOrder = ['Set 1', 'Set 2', 'Set 3', 'Encore'];
     const specialSections = ["Chuck's Dream"];
     
@@ -1264,6 +1344,7 @@ function showSetlistForDate(date) {
     
     setOrder.forEach(setName => {
       if (show.sets[setName]) {
+        console.log(`🎪 Processing ${setName}:`, show.sets[setName]);
         const processedContent = makeAllSongsClickable(show.sets[setName], jamEntries);
         content += `<div style="margin-bottom: 0.75rem;"><strong>${setName}:</strong> ${processedContent}</div>`;
         
@@ -1286,6 +1367,7 @@ function showSetlistForDate(date) {
       }
     });
   } else {
+    console.log('❌ No sets found in show data');
     content += `<div style="text-align: center; color: var(--muted-color); padding: 2rem;">No setlist data available for this show</div>`;
   }
   
@@ -1373,7 +1455,238 @@ function showSetlistForDate(date) {
     document.head.appendChild(styleElement);
   }
   
-  setupSongInteractions('page-setlist', jamEntries);
+  // Replace the entire setTimeout block at the end of showSetlistForDate (around line 1050)
+setTimeout(() => {
+  let currentTooltip = null;
+  
+  console.log('Setting up clickable songs...');
+  console.log('Jam entries available:', jamEntries.length);
+  
+  // Set up ALL clickable songs first - but EXCLUDE venue/city/state/tour elements
+  document.querySelectorAll('#page-setlist .clickable-song').forEach((songElement, index) => {
+    // Skip if this is a venue, city, state, or tour element
+    if (songElement.hasAttribute('data-venue') || 
+        songElement.hasAttribute('data-city') || 
+        songElement.hasAttribute('data-state') || 
+        songElement.hasAttribute('data-tour')) {
+      return; // Skip this element
+    }
+    
+    const songName = songElement.getAttribute('data-song');
+    if (!songName) return; // Skip if no song name
+    
+    const isJamCharted = songElement.getAttribute('data-jam') === 'true';
+    const elementTiming = songElement.getAttribute('data-timing');
+    
+    console.log(`Setting up song ${index + 1}: "${songName}" (jam charted: ${isJamCharted}, timing: ${elementTiming})`);
+    
+    // ... rest of the code stays the same
+    // Apply basic styling
+    if (isJamCharted) {
+      songElement.style.color = 'var(--yellow)';
+      songElement.style.cursor = 'pointer';
+    } else {
+      songElement.style.color = 'var(--text-color)';
+      songElement.style.cursor = 'pointer';
+    }
+    
+    // Click handler for ALL songs - FIXED for non-jam-charted songs
+    songElement.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const cleanSongName = songName.trim();
+      console.log(`Clicked on: "${cleanSongName}" (jam charted: ${isJamCharted})`);
+      
+      if (isJamCharted) {
+        switchPageByName('jams');
+        document.getElementById('search-input').value = cleanSongName;
+        renderFilteredJams();
+      } else {
+        console.log(`Showing song detail for: "${cleanSongName}"`);
+        const normalizedName = normalizeSongName(cleanSongName);
+        console.log(`Normalized name: "${normalizedName}"`);
+        
+        if (dbSongs[normalizedName]) {
+          showSongDetail(normalizedName);
+        } else {
+          const similarSong = Object.keys(dbSongs).find(songKey => 
+            normalizeSongName(songKey).includes(normalizedName) || 
+            normalizedName.includes(normalizeSongName(songKey))
+          );
+          
+          if (similarSong) {
+            showSongDetail(similarSong);
+          } else {
+            console.log(`Song "${cleanSongName}" not found in database`);
+            switchPageByName('stats');
+            document.getElementById('db-song-search').value = cleanSongName;
+            filterDbSongs();
+          }
+        }
+      }
+    });
+  });
+  
+  // Set up hover tooltips for ALL jam-charted songs with exact timing matching
+  const jamSongs = document.querySelectorAll('#page-setlist .jam-song');
+  console.log(`Found ${jamSongs.length} jam-charted songs to set up tooltips for`);
+  
+  jamSongs.forEach((songElement, index) => {
+    const songName = songElement.getAttribute('data-song');
+    const elementTiming = songElement.getAttribute('data-timing');
+    const elementTimingNumber = elementTiming ? parseInt(elementTiming) : null;
+    
+    console.log(`Setting up tooltip for jam song ${index + 1}: "${songName}" (timing: ${elementTiming})`);
+    
+    const possibleJamEntries = jamEntries.filter(jam => {
+      const jamSongClean = jam.song.replace(/\s+/g, ' ').trim();
+      const jamNorm = normalizeSongName(jamSongClean);
+      const currentNorm = normalizeSongName(songName);
+      return jamNorm === currentNorm;
+    });
+    
+    console.log(`Found ${possibleJamEntries.length} possible jam entries for "${songName}"`);
+    
+    let bestJamEntry = null;
+    
+    if (possibleJamEntries.length > 0) {
+      if (possibleJamEntries.length === 1) {
+        bestJamEntry = possibleJamEntries[0];
+        console.log(`Single jam entry found for "${songName}": ${bestJamEntry.timing}`);
+      } else if (elementTimingNumber) {
+        bestJamEntry = possibleJamEntries.find(jam => {
+          const jamTimingMatch = jam.timing.match(/(\d+):(\d+)/);
+          if (!jamTimingMatch) return false;
+          
+          const jamMinutes = parseInt(jamTimingMatch[1]);
+          const timingDiff = Math.abs(jamMinutes - elementTimingNumber);
+          console.log(`Comparing "${songName}": jam ${jamMinutes}min vs element ${elementTimingNumber}min = diff ${timingDiff}`);
+          return timingDiff <= 1;
+        });
+        
+        if (bestJamEntry) {
+          console.log(`Exact timing match found for "${songName}": ${bestJamEntry.timing}`);
+        } else {
+          console.log(`No exact timing match for "${songName}" (${elementTimingNumber} min) - available: ${possibleJamEntries.map(j => j.timing).join(', ')}`);
+        }
+      } else {
+        console.log(`No timing info for "${songName}" - cannot choose between ${possibleJamEntries.length} jam entries`);
+      }
+    }
+    
+    if (bestJamEntry) {
+      if (bestJamEntry.highlighted) {
+        songElement.style.fontWeight = 'bold';
+      }
+      
+      const timing = bestJamEntry.timing;
+      const notes = bestJamEntry.notes ? bestJamEntry.notes.replace(/<[^>]*>/g, '').trim() : '';
+      
+      songElement.addEventListener('mouseover', function(e) {
+        if (timing || notes) {
+          if (currentTooltip) {
+            currentTooltip.remove();
+          }
+          
+          currentTooltip = document.createElement('div');
+          currentTooltip.className = 'jam-song-tooltip';
+          
+          let tooltipContent = '';
+          if (timing && notes) {
+            tooltipContent = `
+              <div class="jam-song-tooltip-timing">${timing}</div>
+              <div class="jam-song-tooltip-notes">${notes}</div>
+            `;
+          } else if (timing) {
+            tooltipContent = `<div class="jam-song-tooltip-timing">${timing}</div>`;
+          } else if (notes) {
+            tooltipContent = `<div class="jam-song-tooltip-notes">${notes}</div>`;
+          }
+          
+          currentTooltip.innerHTML = tooltipContent;
+          document.body.appendChild(currentTooltip);
+          
+          const rect = this.getBoundingClientRect();
+          const tooltipHeight = currentTooltip.offsetHeight;
+          const tooltipWidth = currentTooltip.offsetWidth;
+          
+          let top = rect.top - tooltipHeight - 8;
+          let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+          
+          if (top < 10) top = rect.bottom + 8;
+          if (left < 10) left = 10;
+          if (left + tooltipWidth > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipWidth - 10;
+          }
+          
+          currentTooltip.style.top = top + 'px';
+          currentTooltip.style.left = left + 'px';
+          
+          setTimeout(() => {
+            if (currentTooltip) {
+              currentTooltip.classList.add('show');
+            }
+          }, 50);
+        }
+      });
+      
+      songElement.addEventListener('mouseout', function() {
+        if (currentTooltip) {
+          currentTooltip.remove();
+          currentTooltip = null;
+        }
+      });
+    } else {
+      console.log(`No suitable jam entry found for "${songName}" - removing jam highlighting`);
+      songElement.classList.remove('jam-song');
+      songElement.style.color = 'var(--text-color)';
+      songElement.setAttribute('data-jam', 'false');
+    }
+  });
+  
+  console.log('Finished setting up all song interactions');
+  
+  // Handle venue, city, state, tour clicks
+  console.log('Setting up venue/city/state/tour clicks...');
+  
+  document.querySelectorAll('#page-setlist .clickable-venue').forEach(el => {
+    console.log('Found venue element:', el.getAttribute('data-venue'));
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const venue = this.getAttribute('data-venue');
+      console.log('Venue clicked in setlist:', venue);
+      showLocationShows('venue', venue);
+    });
+  });
+
+  document.querySelectorAll('#page-setlist .clickable-city').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const city = this.getAttribute('data-city');
+      console.log('City clicked in setlist:', city);
+      showLocationShows('city', city);
+    });
+  });
+
+  document.querySelectorAll('#page-setlist .clickable-state').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const state = this.getAttribute('data-state');
+      console.log('State clicked in setlist:', state);
+      showLocationShows('state', state);
+    });
+  });
+
+  document.querySelectorAll('#page-setlist .clickable-tour').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const tour = this.getAttribute('data-tour');
+      console.log('Tour clicked in setlist:', tour);
+      showTourShows(tour);
+    });
+  });
+  
+  console.log('Finished setting up venue/city/state/tour clicks');
+}, 0);
   
   window.scrollTo(0, 0);
 }
@@ -1422,6 +1735,17 @@ let currentSongDetail = null;
 let songDetailRows = [];
 let currentLocationSort = { column: 'date', direction: 'desc' };
 
+function goToLatestSetlist() {
+  document.querySelectorAll('.page-tab').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.page-content').forEach(pane => pane.style.display = 'none');
+  document.querySelector('.page-tab[onclick*="setlist"]').classList.add('active');
+  document.getElementById('page-setlist').style.display = 'block';
+  if (!document.getElementById('latest-setlist-container')) {
+    document.getElementById('page-setlist').innerHTML = '<div id="latest-setlist-container"></div>';
+  }
+  showLatestObsidianSetlist();
+}
+
 function switchPage(page) {
   document.querySelectorAll('.page-tab').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.page-content').forEach(pane => pane.style.display = 'none');
@@ -1431,6 +1755,10 @@ function switchPage(page) {
   
   // If switching to setlist page, show the latest Obsidian show
   if (page === 'setlist') {
+    // showSetlistForDate replaces page-setlist's innerHTML, destroying the container
+    if (!document.getElementById('latest-setlist-container')) {
+      document.getElementById('page-setlist').innerHTML = '<div id="latest-setlist-container"></div>';
+    }
     showLatestObsidianSetlist();
   }
 }
@@ -1445,6 +1773,7 @@ function parseDbSetlist(str) {
   // Step 2: Protect known multi-part names and exclude Chuck's Dream
   str = str
     .replace(/Smooth[,\s]*Relax[,\s]*Down/gi, '|||SMOOTH_RELAX_DOWN|||')
+    .replace(/Lights\s+Out[,\s]*Words\s+Gone/gi, '|||LIGHTS_OUT_WORDS_GONE|||')
     .replace(/\bMotel\s*(?:6)?\b/gi, '|||MOTEL_6|||')
     .replace(/April\s*29[,\s]*1992[^)]*Miami/gi, '|||APRIL_MIAMI|||')
     .replace(/Chuck'?s\s+Dream/gi, '|||CHUCKS_DREAM|||'); // Add Chuck's Dream protection
@@ -1508,6 +1837,8 @@ function parseDbSetlist(str) {
     let restored = s;
     if (s.includes('SMOOTH_RELAX_DOWN')) {
       restored = 'Smooth, Relax, Down';
+    } else if (s.includes('LIGHTS_OUT_WORDS_GONE')) {
+      restored = 'Lights Out, Words Gone';
     } else if (s.includes('MOTEL_6')) {
       restored = 'Motel 6';
     } else if (s.includes('APRIL_MIAMI')) {
@@ -1636,6 +1967,14 @@ function renderDbSongs() {
   
   let sortedSongs = Object.entries(dbSongs);
   
+  // DEBUG: Check if Chuck's Dream is in the database
+  console.log("=== DEBUG: Checking for Chuck's Dream in dbSongs ===");
+  sortedSongs.forEach(([norm, data]) => {
+    if (data.name.toLowerCase().includes("chuck") || norm.includes("chuck")) {
+      console.log("FOUND CHUCK'S DREAM:", data.name, "norm:", norm);
+    }
+  });
+  
   // Apply sorting
   const sort = dbSortState.songs;
   sortedSongs.sort((a, b) => {
@@ -1671,6 +2010,7 @@ function renderDbSongs() {
         songNameLower.includes("chucks dream") ||
         normLower.includes("chuck") ||
         songNameLower.includes("chuck")) {
+      console.log("FILTERING OUT:", data.name, "norm:", norm);
       return; // Skip this song entirely
     }
     
@@ -1681,8 +2021,8 @@ function renderDbSongs() {
     tr.innerHTML = `
       <td><span class="clickable-filter song-name-link" data-song-norm="${norm}">${data.name}</span></td>
       <td>${data.performances.length}</td>
-      <td><span class="clickable-filter">${data.firstPlayed}</span></td>
-      <td><span class="clickable-filter">${data.lastPlayed}</span></td>
+      <td><span class="clickable-filter">${formatDateForDisplay(data.firstPlayed)}</span></td>
+      <td><span class="clickable-filter">${formatDateForDisplay(data.lastPlayed)}</span></td>
       <td>${currentGap}</td>
     `;
     dbSongRows.push({ element: tr, data });
@@ -1775,8 +2115,8 @@ function renderDbLocations() {
       <td><span class="clickable-venue" data-venue="${data.venue}" style="cursor: pointer; color: var(--yellow);">${data.venue}</span></td>
       <td><span class="clickable-city" data-city="${data.city}" style="cursor: pointer; color: var(--yellow);">${data.city}</span>, <span class="clickable-state" data-state="${data.state}" style="cursor: pointer; color: var(--yellow);">${data.state}</span></td>
       <td>${data.shows.length}</td>
-      <td><span class="date-link" data-date="${data.firstShow}" style="cursor: pointer; color: var(--text-color);">${data.firstShow}</span></td>
-      <td><span class="date-link" data-date="${data.lastShow}" style="cursor: pointer; color: var(--text-color);">${data.lastShow}</span></td>
+      <td><span class="date-link" data-date="${data.firstShow}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(data.firstShow)}</span></td>
+      <td><span class="date-link" data-date="${data.lastShow}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(data.lastShow)}</span></td>
     `;
     dbLocationRows.push({ element: tr, venue: venueName, data });
     tbody.appendChild(tr);
@@ -1957,7 +2297,7 @@ function calculateShowDateGap() {
   
   if (!date1 || !date2) {
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = 'Invalid date format. Please use YYYY-MM-DD format (e.g., 2024-01-15)';
+    resultDiv.innerHTML = 'Invalid date format. Please use MM/DD/YYYY or MM-DD-YYYY (e.g., 01/15/2024)';
     return;
   }
   
@@ -2024,6 +2364,10 @@ function showLocationShows(type, value) {
   let shows = [];
   let title = '';
   
+  console.log('=== showLocationShows DEBUG ===');
+  console.log('Type:', type);
+  console.log('Value:', value);
+  
   // Find shows based on location type
   if (type === 'venue') {
     shows = dbDates.filter(date => {
@@ -2045,6 +2389,8 @@ function showLocationShows(type, value) {
     title = `Shows in ${value}`;
   }
   
+  console.log(`Found ${shows.length} shows for ${type}: ${value}`);
+  
   if (shows.length === 0) {
     console.error('❌ No shows found for:', type, value);
     alert(`No shows found for ${type}: ${value}`);
@@ -2054,9 +2400,9 @@ function showLocationShows(type, value) {
   // Update header info
   document.getElementById('song-detail-title').textContent = title;
   document.getElementById('song-detail-count').textContent = shows.length;
-  document.getElementById('song-detail-first').textContent = shows[0] || '-';
-  document.getElementById('song-detail-last').textContent = shows[shows.length - 1] || '-';
-  
+  document.getElementById('song-detail-first').textContent = formatDateForDisplay(shows[0]) || '-';
+  document.getElementById('song-detail-last').textContent = formatDateForDisplay(shows[shows.length - 1]) || '-';
+
   // Calculate current gap (shows since last appearance)
   const lastShowDate = shows[shows.length - 1];
   const lastShowIndex = dbDates.indexOf(lastShowDate);
@@ -2083,9 +2429,9 @@ function showTourShows(tourName) {
   
   document.getElementById('song-detail-title').textContent = `${tourName}`;
   document.getElementById('song-detail-count').textContent = shows.length;
-  document.getElementById('song-detail-first').textContent = shows[0] || '-';
-  document.getElementById('song-detail-last').textContent = shows[shows.length - 1] || '-';
-  
+  document.getElementById('song-detail-first').textContent = formatDateForDisplay(shows[0]) || '-';
+  document.getElementById('song-detail-last').textContent = formatDateForDisplay(shows[shows.length - 1]) || '-';
+
   // Calculate gap between first and last show in tour
   if (shows.length > 1) {
     const firstIndex = dbDates.indexOf(shows[0]);
@@ -2113,6 +2459,9 @@ function renderLocationShowsTable(shows, title, type, value) {
   
   // Sort shows by date (oldest first for gap calculation)
   const sortedShows = [...shows].sort((a, b) => new Date(a) - new Date(b));
+  
+  console.log('Rendering location shows table for:', title);
+  console.log('Total shows:', sortedShows.length);
   
   sortedShows.forEach((date, index) => {
     const show = dbShows[date];
@@ -2385,6 +2734,7 @@ document.addEventListener('click', e => {
     // Check for venue click
     const venueAttr = target.getAttribute('data-venue');
     if (venueAttr) {
+      console.log('Venue clicked from stats:', venueAttr);
       showLocationShows('venue', venueAttr);
       return;
     }
@@ -2392,6 +2742,7 @@ document.addEventListener('click', e => {
     // Check for location click (city, state combo)
     const locationAttr = target.getAttribute('data-location');
     if (locationAttr) {
+      console.log('Location clicked from stats:', locationAttr);
       // For combined location, we need to split city and state
       const [city, state] = locationAttr.split(',').map(s => s.trim());
       if (city) {
@@ -2403,6 +2754,7 @@ document.addEventListener('click', e => {
     // Check for tour click
     const tourAttr = target.getAttribute('data-tour');
     if (tourAttr && tourAttr !== '-') {
+      console.log('Tour clicked from stats:', tourAttr);
       showTourShows(tourAttr);
       return;
     }
@@ -2454,17 +2806,20 @@ function showSongDetail(normSongName) {
   
   const song = dbSongs[normSongName];
   if (!song) {
-    console.error("Song not found in dbSongs:", normSongName);
+    console.log("❌ Song not found in dbSongs:", normSongName);
     return;
   }
-
+  
+  console.log("🔄 showSongDetail called with:", normSongName);
+  console.log("Song data:", song);
+  
   currentSongDetail = { norm: normSongName, data: song };
   
   // Update header info
   document.getElementById('song-detail-title').textContent = song.name;
   document.getElementById('song-detail-count').textContent = song.performances.length;
-  document.getElementById('song-detail-first').textContent = song.firstPlayed;
-  document.getElementById('song-detail-last').textContent = song.lastPlayed;
+  document.getElementById('song-detail-first').textContent = formatDateForDisplay(song.firstPlayed);
+  document.getElementById('song-detail-last').textContent = formatDateForDisplay(song.lastPlayed);
   
   const lastIdx = dbDates.indexOf(song.lastPlayed);
   const currentGap = dbDates.length - 1 - lastIdx;
@@ -2692,7 +3047,7 @@ function renderSongDetailTable() {
       : '-';
     
     tr.innerHTML = `
-      <td><span class="clickable-filter date-link" data-date="${perf.baseDate}" style="cursor: pointer; color: var(--text-color); ${isHighlighted ? 'font-weight:bold;' : ''}">${perf.baseDate}</span></td>
+      <td><span class="clickable-filter date-link" data-date="${perf.baseDate}" style="cursor: pointer; color: var(--text-color); ${isHighlighted ? 'font-weight:bold;' : ''}">${formatDateForDisplay(perf.baseDate)}</span></td>
       <td>${venueCell}</td>
       <td>${perf.gap}</td>
       <td>${perf.setName}</td>
@@ -2711,6 +3066,7 @@ function renderSongDetailTable() {
       venueElement.addEventListener('click', function(e) {
         e.stopPropagation();
         const venueName = this.getAttribute('data-venue');
+        console.log('Venue clicked:', venueName);
         showLocationShows('venue', venueName);
       });
     });
@@ -2720,6 +3076,7 @@ function renderSongDetailTable() {
       songElement.addEventListener('click', function(e) {
         e.stopPropagation();
         const songName = this.getAttribute('data-song');
+        console.log('Song clicked:', songName);
         
         // Find the song in the database
         const normSearch = normalizeSongName(songName);
@@ -2735,6 +3092,7 @@ function renderSongDetailTable() {
           if (similarSong) {
             showSongDetail(similarSong);
           } else {
+            console.log(`Song "${songName}" not found in database`);
             // Fallback: search in the main song list
             document.getElementById('db-song-search').value = songName;
             switchDbTab('songs');
@@ -2744,6 +3102,9 @@ function renderSongDetailTable() {
       });
     });
   }, 0);
+  
+  console.log('About to render', performances.length, 'performances');
+  console.log('First 3 performances:', performances.slice(0, 3));
   
   if (performances.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted-color);">No performances found in setlists for this song</td></tr>';
@@ -2839,12 +3200,15 @@ function showRandomSetlist() {
 document.addEventListener('DOMContentLoaded', function() {
   // Define loadShowsDatabase function
   function loadShowsDatabase() {
+    console.log('Loading shows_database.json...');
     fetch('shows_database.json')
       .then(r => {
+        console.log('Shows database response:', r.status);
         if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
         return r.json();
       })
       .then(data => {
+        console.log('Shows database loaded:', Object.keys(data).length, 'shows');
         
         // Clean the date keys - normalize dates with /1, /2 suffixes
         const cleanedData = {};
@@ -3059,10 +3423,10 @@ function resetToDefaultPage() {
   // Reset filters and search
   document.getElementById("search-input").value = "";
   document.getElementById("filter-select").value = "all";
-  setYearFilter("2026");
 
   // Re-sort and render
   sortTable("date");
+  renderFilteredJams();
 
   // Update tab button highlight
   document.querySelectorAll(".page-tab").forEach(btn => btn.classList.remove("active"));
@@ -3150,11 +3514,11 @@ function showObsidianSetlistByDate(date) {
 <div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
         ${show.tour || show.show_number ? `<div style="color: var(--muted-color); font-size: 0.9rem; text-align: left;">${show.tour ? `<span class="clickable-tour" data-tour="${show.tour}" style="cursor: pointer; color: var(--muted-color);">${show.tour}</span>` : ''}${show.tour && show.show_number ? ' • ' : ''}${show.show_number ? `Show #${show.show_number}` : ''}</div>` : ''}
       </div>
-      
+
       <div style="margin-bottom: 1.5rem;">
         <div style="line-height: 1.6; color: var(--text-color); font-size: 0.95rem;">
   `;
-  
+
   // Process sets
   if (show.sets && Object.keys(show.sets).length > 0) {
     const setOrder = ['Set 1', 'Set 2', 'Set 3', 'Encore'];
@@ -3199,7 +3563,215 @@ function showObsidianSetlistByDate(date) {
   
 document.getElementById('latest-setlist-container').innerHTML = content;
   
-  setupSongInteractions('latest-setlist-container', jamEntries);
+ // At the end of showObsidianSetlistByDate, replace the setTimeout block:
+setTimeout(() => {
+  let currentTooltip = null;
+  
+  console.log('Setting up clickable songs...');
+  console.log('Jam entries available:', jamEntries.length);
+  
+  // Set up ALL clickable songs first - but EXCLUDE venue/city/state/tour elements
+  document.querySelectorAll('#latest-setlist-container .clickable-song').forEach((songElement, index) => {
+    // Skip if this is a venue, city, state, or tour element
+    if (songElement.hasAttribute('data-venue') || 
+        songElement.hasAttribute('data-city') || 
+        songElement.hasAttribute('data-state') || 
+        songElement.hasAttribute('data-tour')) {
+      return; // Skip this element
+    }
+    
+    const songName = songElement.getAttribute('data-song');
+    if (!songName) return; // Skip if no song name
+    
+    const isJamCharted = songElement.getAttribute('data-jam') === 'true';
+    const elementTiming = songElement.getAttribute('data-timing');
+    
+    // Apply basic styling
+    if (isJamCharted) {
+      songElement.style.color = 'var(--yellow)';
+      songElement.style.cursor = 'pointer';
+    } else {
+      songElement.style.color = 'var(--text-color)';
+      songElement.style.cursor = 'pointer';
+    }
+    
+    // Click handler for ALL songs
+    songElement.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const cleanSongName = songName.trim();
+      
+      if (isJamCharted) {
+        switchPageByName('jams');
+        document.getElementById('search-input').value = cleanSongName;
+        renderFilteredJams();
+      } else {
+        const normalizedName = normalizeSongName(cleanSongName);
+        
+        if (dbSongs[normalizedName]) {
+          showSongDetail(normalizedName);
+        } else {
+          const similarSong = Object.keys(dbSongs).find(songKey => 
+            normalizeSongName(songKey).includes(normalizedName) || 
+            normalizedName.includes(normalizeSongName(songKey))
+          );
+          
+          if (similarSong) {
+            showSongDetail(similarSong);
+          } else {
+            switchPageByName('stats');
+            document.getElementById('db-song-search').value = cleanSongName;
+            filterDbSongs();
+          }
+        }
+      }
+    });
+  });
+  
+  // Set up hover tooltips for jam-charted songs
+  const jamSongs = document.querySelectorAll('#latest-setlist-container .jam-song');
+  
+  jamSongs.forEach((songElement) => {
+    const songName = songElement.getAttribute('data-song');
+    if (!songName) return;
+    
+    const elementTiming = songElement.getAttribute('data-timing');
+    const elementTimingNumber = elementTiming ? parseInt(elementTiming) : null;
+    
+    const possibleJamEntries = jamEntries.filter(jam => {
+      const jamSongClean = jam.song.replace(/\s+/g, ' ').trim();
+      const jamNorm = normalizeSongName(jamSongClean);
+      const currentNorm = normalizeSongName(songName);
+      return jamNorm === currentNorm;
+    });
+    
+    let bestJamEntry = null;
+    
+    if (possibleJamEntries.length > 0) {
+      if (possibleJamEntries.length === 1) {
+        bestJamEntry = possibleJamEntries[0];
+      } else if (elementTimingNumber) {
+        bestJamEntry = possibleJamEntries.find(jam => {
+          const jamTimingMatch = jam.timing.match(/(\d+):(\d+)/);
+          if (!jamTimingMatch) return false;
+          
+          const jamMinutes = parseInt(jamTimingMatch[1]);
+          const timingDiff = Math.abs(jamMinutes - elementTimingNumber);
+          return timingDiff <= 1;
+        });
+      }
+    }
+    
+    if (bestJamEntry) {
+      if (bestJamEntry.highlighted) {
+        songElement.style.fontWeight = 'bold';
+      }
+      
+      const timing = bestJamEntry.timing;
+      const notes = bestJamEntry.notes ? bestJamEntry.notes.replace(/<[^>]*>/g, '').trim() : '';
+      
+      songElement.addEventListener('mouseover', function(e) {
+        if (timing || notes) {
+          if (currentTooltip) {
+            currentTooltip.remove();
+          }
+          
+          currentTooltip = document.createElement('div');
+          currentTooltip.className = 'jam-song-tooltip';
+          
+          let tooltipContent = '';
+          if (timing && notes) {
+            tooltipContent = `
+              <div class="jam-song-tooltip-timing">${timing}</div>
+              <div class="jam-song-tooltip-notes">${notes}</div>
+            `;
+          } else if (timing) {
+            tooltipContent = `<div class="jam-song-tooltip-timing">${timing}</div>`;
+          } else if (notes) {
+            tooltipContent = `<div class="jam-song-tooltip-notes">${notes}</div>`;
+          }
+          
+          currentTooltip.innerHTML = tooltipContent;
+          document.body.appendChild(currentTooltip);
+          
+          const rect = this.getBoundingClientRect();
+          const tooltipHeight = currentTooltip.offsetHeight;
+          const tooltipWidth = currentTooltip.offsetWidth;
+          
+          let top = rect.top - tooltipHeight - 8;
+          let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+          
+          if (top < 10) top = rect.bottom + 8;
+          if (left < 10) left = 10;
+          if (left + tooltipWidth > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipWidth - 10;
+          }
+          
+          currentTooltip.style.top = top + 'px';
+          currentTooltip.style.left = left + 'px';
+          
+          setTimeout(() => {
+            if (currentTooltip) {
+              currentTooltip.classList.add('show');
+            }
+          }, 50);
+        }
+      });
+      
+      songElement.addEventListener('mouseout', function() {
+        if (currentTooltip) {
+          currentTooltip.remove();
+          currentTooltip = null;
+        }
+      });
+    } else {
+      songElement.classList.remove('jam-song');
+      songElement.style.color = 'var(--text-color)';
+      songElement.setAttribute('data-jam', 'false');
+    }
+  });
+  
+  // Handle venue, city, state, tour clicks
+  console.log('Setting up venue/city/state/tour clicks for Obsidian setlist...');
+  
+  document.querySelectorAll('#latest-setlist-container .clickable-venue').forEach(el => {
+    console.log('Found venue element:', el.getAttribute('data-venue'));
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const venue = this.getAttribute('data-venue');
+      console.log('Venue clicked in Obsidian setlist:', venue);
+      showLocationShows('venue', venue);
+    });
+  });
+
+  document.querySelectorAll('#latest-setlist-container .clickable-city').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const city = this.getAttribute('data-city');
+      console.log('City clicked in Obsidian setlist:', city);
+      showLocationShows('city', city);
+    });
+  });
+
+  document.querySelectorAll('#latest-setlist-container .clickable-state').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const state = this.getAttribute('data-state');
+      console.log('State clicked in Obsidian setlist:', state);
+      showLocationShows('state', state);
+    });
+  });
+
+  document.querySelectorAll('#latest-setlist-container .clickable-tour').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const tour = this.getAttribute('data-tour');
+      console.log('Tour clicked in Obsidian setlist:', tour);
+      showTourShows(tour);
+    });
+  });
+  
+  console.log('Finished setting up venue/city/state/tour clicks for Obsidian setlist');
+}, 0);
   
   window.scrollTo(0, 0);
 }
