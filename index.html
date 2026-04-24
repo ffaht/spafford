@@ -967,23 +967,54 @@ function makeAllSongsClickable(rawSetString, jamEntries) {
     const jamNorm = normalizeSongName(jam.song);
     const jamTimingMatch = (jam.timing || '').match(/(\d+):/);
     const jamMinutes = jamTimingMatch ? parseInt(jamTimingMatch[1]) : null;
-    
-    // Find all occurrences of this song in the setlist
+
+    // Pass 1: explicit occurrence tag (1-indexed) takes priority
+    if (jam.occurrence) {
+      const targetIdx = jam.occurrence - 1;
+      let oIdx = 0;
+      for (let i = 0; i < songList.length; i++) {
+        if (songList[i].normalized === jamNorm) {
+          if (oIdx === targetIdx) {
+            const mapKey = `${jamNorm}_${oIdx}`;
+            if (!jamEntryMap.has(mapKey)) jamEntryMap.set(mapKey, jam);
+            break;
+          }
+          oIdx++;
+        }
+      }
+      return;
+    }
+
+    // Pass 2: try to assign by timing match
+    let assigned = false;
     let occurrenceIndex = 0;
     for (let i = 0; i < songList.length; i++) {
       if (songList[i].normalized === jamNorm) {
         const setlistTiming = songList[i].timingNumber;
         const mapKey = `${jamNorm}_${occurrenceIndex}`;
-        
-        // If this occurrence doesn't have a jam entry yet, check if timing matches
         if (!jamEntryMap.has(mapKey)) {
           if (setlistTiming && jamMinutes && Math.abs(setlistTiming - jamMinutes) <= 2) {
             jamEntryMap.set(mapKey, jam);
-            break; // This jam entry is now assigned
+            assigned = true;
+            break;
           }
         }
-        
         occurrenceIndex++;
+      }
+    }
+
+    // Pass 3: no timing match — assign to the first occurrence not yet claimed
+    if (!assigned) {
+      occurrenceIndex = 0;
+      for (let i = 0; i < songList.length; i++) {
+        if (songList[i].normalized === jamNorm) {
+          const mapKey = `${jamNorm}_${occurrenceIndex}`;
+          if (!jamEntryMap.has(mapKey)) {
+            jamEntryMap.set(mapKey, jam);
+            break;
+          }
+          occurrenceIndex++;
+        }
       }
     }
   });
@@ -1148,47 +1179,14 @@ function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
       songElement.style.webkitTapHighlightColor = "transparent";
 
       /* ===========================
-         MOBILE — LONG PRESS ONLY
+         MOBILE — TAP SHOWS TOOLTIP
          =========================== */
       if (isTouchDevice && isJamCharted && matchingEntry) {
-        songElement.addEventListener(
-  "touchstart",
-  () => {
-    longPressTriggered = false;
-    longPressTimer = setTimeout(() => {
-      longPressTriggered = true;
-      showTooltip(songElement, matchingEntry);
-    }, 500);
-  },
-  { passive: true }
-);
-
-
-        songElement.addEventListener("touchend", () => {
-          clearTimeout(longPressTimer);
+        songElement.addEventListener("click", e => {
+          e.preventDefault();
+          e.stopPropagation();
+          showTooltip(songElement, matchingEntry);
         });
-
-        songElement.addEventListener("touchmove", () => {
-          clearTimeout(longPressTimer);
-        });
-
-        // Suppress navigation if long-press fired
-       songElement.addEventListener("click", e => {
-  if (longPressTriggered) {
-    // Long-press = tooltip only
-    e.preventDefault();
-    e.stopPropagation();
-    longPressTriggered = false;
-    return;
-  }
-
-  // Short tap = navigate to jam chart
-  switchPageByName("jams");
-  document.getElementById("search-input").value = songName;
-  renderFilteredJams();
-});
-
-
         return; // ⛔️ do NOT bind desktop click behavior
       }
 
@@ -3015,6 +3013,17 @@ function renderSongDetailTable() {
     return false;
   });
   
+  // Deduplicate: keep only as many rows per show as there are jam entries for that date (min 1)
+  const jamCountByDate = {};
+  jamsForSong.forEach(j => {
+    jamCountByDate[j.date] = (jamCountByDate[j.date] || 0) + 1;
+  });
+  const seenShowCounts = {};
+  performances = performances.filter(perf => {
+    seenShowCounts[perf.baseDate] = (seenShowCounts[perf.baseDate] || 0) + 1;
+    return seenShowCounts[perf.baseDate] <= Math.max(jamCountByDate[perf.baseDate] || 0, 1);
+  });
+
   // Render each performance
   performances.forEach(perf => {
     const jamEntry = jamsForSong.find(j => {
