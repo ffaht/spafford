@@ -1187,10 +1187,16 @@ function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
         songElement.addEventListener("touchmove", () => { touchMoved = true; }, { passive: true });
         songElement.addEventListener("touchend", e => {
           if (!touchMoved) {
-            e.preventDefault(); // block synthesized click
+            e.preventDefault();
             showTooltip(songElement, matchingEntry);
           }
         }, { passive: false });
+        // Defensive: iOS sometimes fires a synthesized click despite preventDefault on touchend.
+        // Always block it on jam-charted songs so we never navigate away.
+        songElement.addEventListener("click", e => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
         return; // ⛔️ do NOT bind desktop click behavior
       }
 
