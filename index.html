@@ -1500,10 +1500,17 @@ setTimeout(() => {
     
     // Click handler for ALL songs - FIXED for non-jam-charted songs
     songElement.addEventListener('click', function(e) {
+      // Mobile + jam-charted: setupSongClicksAndTooltips handles tooltip; never navigate.
+      const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      if (isTouchDevice && isJamCharted) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       e.stopPropagation();
       const cleanSongName = songName.trim();
       console.log(`Clicked on: "${cleanSongName}" (jam charted: ${isJamCharted})`);
-      
+
       if (isJamCharted) {
         switchPageByName('jams');
         document.getElementById('search-input').value = cleanSongName;
@@ -3616,9 +3623,16 @@ setTimeout(() => {
     
     // Click handler for ALL songs
     songElement.addEventListener('click', function(e) {
+      // Mobile + jam-charted: setupSongClicksAndTooltips handles tooltip; never navigate.
+      const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      if (isTouchDevice && isJamCharted) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       e.stopPropagation();
       const cleanSongName = songName.trim();
-      
+
       if (isJamCharted) {
         switchPageByName('jams');
         document.getElementById('search-input').value = cleanSongName;
