@@ -1182,11 +1182,15 @@ function setupSongClicksAndTooltips(jamEntries, containerSelector = null) {
          MOBILE — TAP SHOWS TOOLTIP
          =========================== */
       if (isTouchDevice && isJamCharted && matchingEntry) {
-        songElement.addEventListener("click", e => {
-          e.preventDefault();
-          e.stopPropagation();
-          showTooltip(songElement, matchingEntry);
-        });
+        let touchMoved = false;
+        songElement.addEventListener("touchstart", () => { touchMoved = false; }, { passive: true });
+        songElement.addEventListener("touchmove", () => { touchMoved = true; }, { passive: true });
+        songElement.addEventListener("touchend", e => {
+          if (!touchMoved) {
+            e.preventDefault(); // block synthesized click
+            showTooltip(songElement, matchingEntry);
+          }
+        }, { passive: false });
         return; // ⛔️ do NOT bind desktop click behavior
       }
 
