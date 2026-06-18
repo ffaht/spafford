@@ -281,6 +281,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <option value="highlighted">Highlighted</option>
 </select>
 </div>
+<div id="jam-year-filter" style="display:flex;gap:0.5rem;margin:0.75rem 0 1rem 0;flex-wrap:wrap;">
+  <button type="button" class="tab-button jam-year-btn" data-year="2025" onclick="setJamYear('2025')">2025</button>
+  <button type="button" class="tab-button jam-year-btn active" data-year="2026" onclick="setJamYear('2026')">2026</button>
+</div>
 <div class="jam-table-container">
 <table class="jam-table">
 <thead>
@@ -436,7 +440,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 // JAM CHART CODE
 let allJams = [];
 let currentSort = {column:'date',direction:'desc'};
+let selectedJamYear = '2026';
 const tableBody = document.getElementById('jam-table-body');
+
+function setJamYear(year) {
+  selectedJamYear = year;
+  document.querySelectorAll('.jam-year-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.year === year);
+  });
+  currentSort = {column:'date', direction:'desc'};
+  document.querySelectorAll('[id$="-sort"]').forEach(ind => ind.textContent = '');
+  const dateInd = document.getElementById('date-sort');
+  if (dateInd) dateInd.textContent = '▼';
+  renderFilteredJams();
+}
+
+function getJamYear(j) {
+  if (j.dbDate && /^\d{4}-/.test(j.dbDate)) return j.dbDate.slice(0,4);
+  if (j.date) {
+    const parts = j.date.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) return parts[0];
+      if (parts[2].length === 4) return parts[2];
+    }
+  }
+  return '';
+}
 let currentTooltip = null;
 let longPressTimer = null;
 let longPressTriggered = false;
@@ -758,6 +787,7 @@ function renderFilteredJams(){
   const filterVal = document.getElementById('filter-select').value;
 
   const filtered = allJams.filter(j=>{
+    if(selectedJamYear && getJamYear(j) !== selectedJamYear) return false;
     if(filterVal==='highlighted' && !j.highlighted) return false;
     if(!searchTerm) return true;
     // Look up location for search
