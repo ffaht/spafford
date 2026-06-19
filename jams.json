@@ -1415,7 +1415,7 @@
     "song": "All My Friends",
     "timing": "2:08",
     "venue": "Nashua Center for the Arts",
-    "notes": "\nA bit out of the box, with some slowdowns, and samples. \n"
+    "notes": "\nA bit out of the box, with some slowdowns and samples. \n"
   },
   {
     "date": "2025-06-22",
@@ -4784,5 +4784,26 @@
     "timing": "19:20",
     "venue": "Redstone Room",
     "notes": "\nBeautiful, full-band interplay that shuffles breezily through forestland.\n"
+  },
+  {
+    "date": "2026-06-17",
+    "song": "Soggy Froggy",
+    "timing": "21:48",
+    "venue": "Hobart Art Theater",
+    "notes": "\nAn Acid Disco of paint that splatters and takes the form of dancing projections before dripping down to industrial workings where it shakes out of itself and into a Latin noir thriller.\n"
+  },
+  {
+    "date": "2026-06-17",
+    "song": "The Remedy",
+    "timing": "14:40",
+    "venue": "Hobart Art Theater",
+    "notes": "\nMid-morning staccato strolling alongside shrubland streams and through recursive islands. More than a few tears will be shed during this listen.\n"
+  },
+  {
+    "date": "2026-06-17",
+    "song": "The Reprise",
+    "timing": "20:26",
+    "venue": "Hobart Art Theater",
+    "notes": "\nActive livetronica for the first eight (!) and a half minutes before dipping into The Reprise proper.\n"
   }
 ]
