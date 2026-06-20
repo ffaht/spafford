@@ -1414,7 +1414,7 @@ function showSetlistForDate(date) {
       <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
         <h1 style="color: var(--yellow); font-size: 1.8rem; margin-bottom: 0.5rem; text-align: left;">${displayDate}</h1>
        <div style="font-size: 1.1rem; margin-bottom: 0.3rem; text-align: left;"><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--text-color);">${show.venue}</span></div>
-<div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
+<div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
        ${show.tour || show.show_number ? `<div style="color: var(--muted-color); font-size: 0.9rem; text-align: left;">${show.tour ? `<span class="clickable-tour" data-tour="${show.tour}" style="cursor: pointer; color: var(--muted-color);">${show.tour}</span>` : ''}${show.tour && show.show_number ? ' • ' : ''}${show.show_number ? `Show #${show.show_number}` : ''}</div>` : ''}
       </div>
 
@@ -1758,8 +1758,9 @@ setTimeout(() => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
       const city = this.getAttribute('data-city');
-      console.log('City clicked in setlist:', city);
-      showLocationShows('city', city);
+      const state = this.getAttribute('data-state') || '';
+      console.log('City clicked in setlist:', city, state);
+      showLocationShows('city', city, { state });
     });
   });
 
@@ -1884,7 +1885,7 @@ function renderChucksDreamTable() {
     const [y, m, d] = r.date.split('-');
     const displayDate = `${m}-${d}-${y}`;
     const cityCell = r.city
-      ? `<span class="clickable-city" data-city="${r.city}" style="cursor:pointer;color:var(--yellow);">${r.city}</span>`
+      ? `<span class="clickable-city" data-city="${r.city}" data-state="${r.state || ''}" style="cursor:pointer;color:var(--yellow);">${r.city}</span>`
       : '';
     const stateCell = r.state
       ? `<span class="clickable-state" data-state="${r.state}" style="cursor:pointer;color:var(--yellow);">${r.state}</span>`
@@ -1951,7 +1952,7 @@ document.addEventListener('click', e => {
   const c = e.target.closest('.clickable-city');
   if (c) {
     e.stopPropagation();
-    if (typeof showLocationShows === 'function') showLocationShows('city', c.getAttribute('data-city'));
+    if (typeof showLocationShows === 'function') showLocationShows('city', c.getAttribute('data-city'), { state: c.getAttribute('data-state') || '' });
     return;
   }
   const s = e.target.closest('.clickable-state');
@@ -2566,7 +2567,7 @@ function renderDbLocations() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><span class="clickable-venue" data-venue="${data.venue}" style="cursor: pointer; color: var(--yellow);">${data.venue}</span></td>
-      <td><span class="clickable-city" data-city="${data.city}" style="cursor: pointer; color: var(--yellow);">${data.city}</span>, <span class="clickable-state" data-state="${data.state}" style="cursor: pointer; color: var(--yellow);">${data.state}</span></td>
+      <td><span class="clickable-city" data-city="${data.city}" data-state="${data.state}" style="cursor: pointer; color: var(--yellow);">${data.city}</span>, <span class="clickable-state" data-state="${data.state}" style="cursor: pointer; color: var(--yellow);">${data.state}</span></td>
       <td>${data.shows.length}</td>
       <td><span class="date-link" data-date="${data.firstShow}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(data.firstShow)}</span></td>
       <td><span class="date-link" data-date="${data.lastShow}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(data.lastShow)}</span></td>
@@ -2589,7 +2590,8 @@ function renderDbLocations() {
       el.addEventListener('click', function(e) {
         e.stopPropagation();
         const city = this.getAttribute('data-city');
-        showLocationShows('city', city);
+        const state = this.getAttribute('data-state') || '';
+        showLocationShows('city', city, { state });
       });
     });
 
@@ -2811,7 +2813,7 @@ Shows:        ${showGap} show${showGap !== 1 ? 's' : ''} between
 Days:         ${dayGap} days`;
 }
 
-function showLocationShows(type, value) {
+function showLocationShows(type, value, extra) {
   switchPageByName('stats');
   
   let shows = [];
@@ -2832,11 +2834,21 @@ function showLocationShows(type, value) {
     });
     title = `Shows at ${displayName}`;
   } else if (type === 'city') {
-    shows = dbDates.filter(date => {
-      const show = dbShows[date];
-      return show.city === value;
-    });
-    title = `Shows in ${value}`;
+    // If a state was provided alongside the city, scope by both so that, e.g.,
+    // Portland, OR and Portland, ME stay separate.
+    if (extra && extra.state) {
+      shows = dbDates.filter(date => {
+        const show = dbShows[date];
+        return show.city === value && show.state === extra.state;
+      });
+      title = `Shows in ${value}, ${extra.state}`;
+    } else {
+      shows = dbDates.filter(date => {
+        const show = dbShows[date];
+        return show.city === value;
+      });
+      title = `Shows in ${value}`;
+    }
   } else if (type === 'state') {
     shows = dbDates.filter(date => {
       const show = dbShows[date];
@@ -2953,7 +2965,7 @@ function renderLocationShowsTable(shows, title, type, value) {
     tr.innerHTML = `
       <td><span class="date-link" data-date="${date}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(date)}</span></td>
       <td><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--yellow);">${show.venue || 'Unknown'}</span></td>
-      <td><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--yellow);">${show.city || 'Unknown'}</span></td>
+      <td><span class="clickable-city" data-city="${show.city}" data-state="${show.state || ''}" style="cursor: pointer; color: var(--yellow);">${show.city || 'Unknown'}</span></td>
       <td><span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--yellow);">${show.state || ''}</span></td>
       <td>${gap}</td>
       <td>${totalSongs}</td>
@@ -2993,7 +3005,8 @@ function renderLocationShowsTable(shows, title, type, value) {
       el.addEventListener('click', function(e) {
         e.stopPropagation();
         const city = this.getAttribute('data-city');
-        showLocationShows('city', city);
+        const state = this.getAttribute('data-state') || '';
+        showLocationShows('city', city, { state });
       });
     });
 
@@ -3155,7 +3168,7 @@ function renderTourShowsTable(shows, tourName) {
     tr.innerHTML = `
       <td><span class="date-link" data-date="${r.date}" style="cursor: pointer; color: var(--text-color);">${r.date}</span></td>
       <td><span class="clickable-venue" data-venue="${r.venue}" style="cursor: pointer; color: var(--yellow);">${r.venue || 'Unknown'}</span></td>
-      <td><span class="clickable-city" data-city="${r.city}" style="cursor: pointer; color: var(--yellow);">${r.city || 'Unknown'}</span>, <span class="clickable-state" data-state="${r.state}" style="cursor: pointer; color: var(--yellow);">${r.state || ''}</span></td>
+      <td><span class="clickable-city" data-city="${r.city}" data-state="${r.state || ''}" style="cursor: pointer; color: var(--yellow);">${r.city || 'Unknown'}</span>, <span class="clickable-state" data-state="${r.state}" style="cursor: pointer; color: var(--yellow);">${r.state || ''}</span></td>
       <td>${r.total_songs}</td>
       <td>${r.show_number ?? '-'}</td>
     `;
@@ -3187,7 +3200,8 @@ function renderTourShowsTable(shows, tourName) {
       el.addEventListener('click', function(e) {
         e.stopPropagation();
         const city = this.getAttribute('data-city');
-        showLocationShows('city', city);
+        const state = this.getAttribute('data-state') || '';
+        showLocationShows('city', city, { state });
       });
     });
 
@@ -3244,7 +3258,7 @@ document.addEventListener('click', e => {
       // For combined location, we need to split city and state
       const [city, state] = locationAttr.split(',').map(s => s.trim());
       if (city) {
-        showLocationShows('city', city);
+        showLocationShows('city', city, { state: state || '' });
       }
       return;
     }
@@ -4076,7 +4090,7 @@ function showObsidianSetlistByDate(date) {
       <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
         <h1 style="color: var(--yellow); font-size: 1.8rem; margin-bottom: 0.5rem; text-align: left;">${displayDate}</h1>
         <div style="font-size: 1.1rem; margin-bottom: 0.3rem; text-align: left;"><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--text-color);">${show.venue}</span></div>
-<div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
+<div style="color: var(--muted-color); font-size: 0.95rem; text-align: left; margin-bottom: 0.3rem;"><span class="clickable-city" data-city="${show.city}" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.city}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--text-color);">${show.state}</span></div>
         ${show.tour || show.show_number ? `<div style="color: var(--muted-color); font-size: 0.9rem; text-align: left;">${show.tour ? `<span class="clickable-tour" data-tour="${show.tour}" style="cursor: pointer; color: var(--muted-color);">${show.tour}</span>` : ''}${show.tour && show.show_number ? ' • ' : ''}${show.show_number ? `Show #${show.show_number}` : ''}</div>` : ''}
       </div>
 
@@ -4319,8 +4333,9 @@ setTimeout(() => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
       const city = this.getAttribute('data-city');
-      console.log('City clicked in Obsidian setlist:', city);
-      showLocationShows('city', city);
+      const state = this.getAttribute('data-state') || '';
+      console.log('City clicked in Obsidian setlist:', city, state);
+      showLocationShows('city', city, { state });
     });
   });
 
