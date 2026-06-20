@@ -539,17 +539,24 @@ function formatDateForDisplay(dateStr) {
   if (!dateStr) return '';
   try {
     let month, day, year;
-    
-    if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
-      [year, month, day] = dateStr.split('-').map(Number);
-    } 
-    else if (dateStr.includes('/')) {
-      [month, day, year] = dateStr.split('/').map(Number);
+
+    // Strip any "/1", "/2" suffix used for multiple shows on the same date,
+    // but only when the prefix is a YYYY-MM-DD key (not a true M/D/Y date).
+    let s = dateStr;
+    if (/^\d{4}-\d{2}-\d{2}\/\d+$/.test(s)) {
+      s = s.split('/')[0];
+    }
+
+    if (s.includes('-') && s.split('-')[0].length === 4) {
+      [year, month, day] = s.split('-').map(Number);
+    }
+    else if (s.includes('/')) {
+      [month, day, year] = s.split('/').map(Number);
     }
     else {
-      return dateStr;
+      return s;
     }
-    
+
     const monthStr = month.toString().padStart(2, '0');
     const dayStr = day.toString().padStart(2, '0');
     return `${monthStr}-${dayStr}-${year}`;
@@ -1351,8 +1358,10 @@ function showSetlistForDate(date) {
   const prevDate = currentIndex > 0 ? allDates[currentIndex - 1] : null;
   const nextDate = currentIndex < allDates.length - 1 ? allDates[currentIndex + 1] : null;
   
-  // Format date for display (Month Date, Year)
-  const [year, month, day] = dbDate.split('-').map(Number);
+  // Format date for display (Month Date, Year). Strip any "/1", "/2" suffix
+  // used for multiple shows on the same date before parsing.
+  const _dateForDisplay = dbDate.split('/')[0];
+  const [year, month, day] = _dateForDisplay.split('-').map(Number);
   const displayDate = new Date(year, month - 1, day).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -2310,39 +2319,220 @@ function sortDbSongs(column) {
   filterDbSongs();
 }
 
+// Manually-curated aliases for cases pure normalization can't catch.
+// Key format: "normalizedName|cityLower|stateLower" -> canonical normalizedName
+const MANUAL_VENUE_ALIASES = {};
+
+// Force a specific display name for a merged group whose default (shortest variant)
+// isn't the recognizable canonical name.
+// Key format: "${canonicalNormName}||${cityLower}||${stateLower}" -> display string.
+const MANUAL_VENUE_DISPLAYS = {};
+
+// Normalize a venue name into a grouping key so name variants merge.
+// Examples: "Antone's Night Club" / "Antone's Nightclub" / "Antone's" -> "antones"
+//           "Fox Theatre" / "Fox Theater" -> "fox theater"
+//           "Volcanic Theatre Pub" -> "volcanic theater"
+function _normalizeVenueName(name) {
+  if (!name) return '';
+  let s = String(name).toLowerCase().trim();
+  s = s.replace(/&/g, ' and ');
+  s = s.replace(/[^\w\s]/g, '');             // strip punctuation: antone's -> antones
+  s = s.replace(/\bcompany\b/g, 'co');       // company -> co (abbreviation collapse)
+  s = s.replace(/\btheatre\b/g, 'theater'); // British -> American spelling
+  s = s.replace(/^the\s+/, '');               // strip leading "the "
+  // Strip common venue-type suffixes (apply repeatedly so multi-suffix tails collapse)
+  for (let i = 0; i < 3; i++) {
+    s = s.replace(/\s+(night\s*club|club|pub|tavern|bar\s+and\s+stage|bar|lounge|venue)$/, '');
+  }
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
+}
+function _venueGroupKey(venue, city, state) {
+  let v = _normalizeVenueName(venue);
+  const cityNorm = (city || '').toLowerCase().trim();
+  const stateNorm = (state || '').toLowerCase().trim();
+
+  // (We intentionally do NOT strip the city name here — the fuzzy/Jaccard pass
+  //  below merges variants like "Buffalo Iron Works" / "Iron Works" naturally,
+  //  and keeping the city in the token set lets "Crystal Bay Casino" merge with
+  //  "Crystal Bay Club Crown Room" via shared tokens.)
+
+  // Apply manual aliases
+  const aliasKey = `${v}|${cityNorm}|${stateNorm}`;
+  if (MANUAL_VENUE_ALIASES[aliasKey]) v = MANUAL_VENUE_ALIASES[aliasKey];
+
+  return `${v}||${cityNorm}||${stateNorm}`;
+}
+
+// Edit distance, with early-exit when difference clearly exceeds threshold.
+function _editDistance(a, b) {
+  if (!a || !b) return Math.max((a || '').length, (b || '').length);
+  if (Math.abs(a.length - b.length) > 2) return 999;
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// Jaccard token-overlap similarity. Returns {score, intersect}.
+function _tokenSetForVenue(name) {
+  return new Set(name.split(/\s+/).filter(Boolean));
+}
+function _jaccardSim(a, b) {
+  if (!a.size || !b.size) return { score: 0, intersect: 0 };
+  let intersect = 0;
+  a.forEach(x => { if (b.has(x)) intersect++; });
+  return { score: intersect / (a.size + b.size - intersect), intersect };
+}
+
+// Fuzzy second-pass with union-find so transitive matches chain together.
+// Merges groups within the same (city, state) when EITHER
+//   - normalized names differ by ≤ 1 edit (catches typos: "Sprits"/"Spirits"), OR
+//   - token-overlap Jaccard ≥ 0.5 with ≥ 2 shared tokens
+//     (catches variants like "Crystal Bay Casino"/"Crystal Bay Club Crown Room"
+//      that share enough words to be the same physical venue).
+function _fuzzyMergeVenueGroups(venueStats) {
+  const buckets = {};
+  Object.entries(venueStats).forEach(([key, group]) => {
+    const cs = `${(group.city || '').toLowerCase()}||${(group.state || '').toLowerCase()}`;
+    if (!buckets[cs]) buckets[cs] = [];
+    buckets[cs].push(key);
+  });
+
+  Object.values(buckets).forEach(keys => {
+    if (keys.length < 2) return;
+
+    // Union-find for transitive merge
+    const parent = new Map(keys.map(k => [k, k]));
+    const find = k => {
+      while (parent.get(k) !== k) {
+        parent.set(k, parent.get(parent.get(k)));
+        k = parent.get(k);
+      }
+      return k;
+    };
+    const union = (a, b) => {
+      const ra = find(a), rb = find(b);
+      if (ra !== rb) parent.set(ra, rb);
+    };
+
+    // Precompute token sets
+    const tokens = new Map(keys.map(k => [k, _tokenSetForVenue(k.split('||')[0])]));
+
+    for (let i = 0; i < keys.length; i++) {
+      for (let j = i + 1; j < keys.length; j++) {
+        const ki = keys[i], kj = keys[j];
+        const ni = ki.split('||')[0], nj = kj.split('||')[0];
+        if (!ni || !nj) continue;
+        if (_editDistance(ni, nj) <= 1) {
+          union(ki, kj);
+          continue;
+        }
+        const sim = _jaccardSim(tokens.get(ki), tokens.get(kj));
+        if (sim.intersect >= 2 && sim.score >= 0.5) {
+          union(ki, kj);
+        }
+      }
+    }
+
+    // Collect clusters and merge each into its largest-show member
+    const clusters = new Map();
+    keys.forEach(k => {
+      const r = find(k);
+      if (!clusters.has(r)) clusters.set(r, []);
+      clusters.get(r).push(k);
+    });
+
+    clusters.forEach(members => {
+      if (members.length < 2) return;
+      members.sort((a, b) => venueStats[b].shows.length - venueStats[a].shows.length);
+      const survivor = venueStats[members[0]];
+      for (let i = 1; i < members.length; i++) {
+        const other = venueStats[members[i]];
+        other.aliases.forEach(x => survivor.aliases.add(x));
+        survivor.shows.push(...other.shows);
+        if (new Date(other.firstShow) < new Date(survivor.firstShow)) survivor.firstShow = other.firstShow;
+        if (new Date(other.lastShow) > new Date(survivor.lastShow)) survivor.lastShow = other.lastShow;
+        // Keep the larger group's display name — don't let smaller variants override it.
+        delete venueStats[members[i]];
+      }
+    });
+  });
+}
+
+// Map: original venue name (case-sensitive) -> canonical display name we picked.
+// Used by showLocationShows so clicking any variant shows the merged set of shows.
+let _venueDisplayByOriginal = {};
+let _venueAliasesByDisplay = {};
+
 function renderDbLocations() {
   const tbody = document.getElementById('db-locations-tbody');
   tbody.innerHTML = '';
   dbLocationRows = [];
-  
-  // Build a list of unique venues with their stats
+  _venueDisplayByOriginal = {};
+  _venueAliasesByDisplay = {};
+
+  // Build venue groups keyed by (normalized venue, city, state)
   const venueStats = {};
-  
+
   dbDates.forEach(date => {
     const show = dbShows[date];
     const venue = show.venue || 'Unknown';
     const city = show.city || 'Unknown';
     const state = show.state || '';
-    const locationKey = `${city}, ${state}`.trim();
-    
-    if (!venueStats[venue]) {
-      venueStats[venue] = {
+    const groupKey = _venueGroupKey(venue, city, state);
+
+    if (!venueStats[groupKey]) {
+      venueStats[groupKey] = {
         venue: venue,
         city: city,
         state: state,
+        aliases: new Set([venue]),
         shows: [],
         firstShow: date,
         lastShow: date
       };
+    } else {
+      venueStats[groupKey].aliases.add(venue);
+      // Prefer the shortest variant as the display name (e.g. "Antone's" over "Antone's Nightclub")
+      if (venue.length < venueStats[groupKey].venue.length) {
+        venueStats[groupKey].venue = venue;
+      }
     }
-    
-    venueStats[venue].shows.push(date);
-    if (new Date(date) < new Date(venueStats[venue].firstShow)) {
-      venueStats[venue].firstShow = date;
+
+    venueStats[groupKey].shows.push(date);
+    if (new Date(date) < new Date(venueStats[groupKey].firstShow)) {
+      venueStats[groupKey].firstShow = date;
     }
-    if (new Date(date) > new Date(venueStats[venue].lastShow)) {
-      venueStats[venue].lastShow = date;
+    if (new Date(date) > new Date(venueStats[groupKey].lastShow)) {
+      venueStats[groupKey].lastShow = date;
     }
+  });
+
+  // Fuzzy second pass: catch typo variants like "Low Sprits" vs "Low Spirits"
+  _fuzzyMergeVenueGroups(venueStats);
+
+  // Apply manual display-name overrides where the shortest variant isn't canonical
+  Object.entries(venueStats).forEach(([key, group]) => {
+    if (MANUAL_VENUE_DISPLAYS[key]) group.venue = MANUAL_VENUE_DISPLAYS[key];
+    // Standardize trailing "Co" -> "Co." (e.g. "Pisgah Brewing Co" -> "Pisgah Brewing Co.")
+    group.venue = group.venue.replace(/\bCo$/, 'Co.');
+  });
+
+  // Build the alias lookup tables used by showLocationShows
+  Object.values(venueStats).forEach(g => {
+    const display = g.venue;
+    const aliasList = Array.from(g.aliases);
+    _venueAliasesByDisplay[display] = aliasList;
+    aliasList.forEach(a => { _venueDisplayByOriginal[a] = display; });
   });
   
   // Convert to array for sorting
@@ -2633,11 +2823,14 @@ function showLocationShows(type, value) {
   
   // Find shows based on location type
   if (type === 'venue') {
+    // Use the alias group so "Antone's Nightclub" / "Antone's Night Club" / "Antone's" all merge
+    const displayName = _venueDisplayByOriginal[value] || value;
+    const aliasSet = new Set(_venueAliasesByDisplay[displayName] || [value]);
     shows = dbDates.filter(date => {
       const show = dbShows[date];
-      return show.venue === value;
+      return aliasSet.has(show.venue);
     });
-    title = `Shows at ${value}`;
+    title = `Shows at ${displayName}`;
   } else if (type === 'city') {
     shows = dbDates.filter(date => {
       const show = dbShows[date];
@@ -2758,7 +2951,7 @@ function renderLocationShowsTable(shows, title, type, value) {
     
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="date-link" data-date="${date}" style="cursor: pointer; color: var(--text-color);">${date}</span></td>
+      <td><span class="date-link" data-date="${date}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(date)}</span></td>
       <td><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--yellow);">${show.venue || 'Unknown'}</span></td>
       <td><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--yellow);">${show.city || 'Unknown'}</span></td>
       <td><span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--yellow);">${show.state || ''}</span></td>
@@ -3165,7 +3358,21 @@ function showSongDetail(normSongName) {
 
   // Clear the new song search input
   document.getElementById('song-detail-new-search').value = '';
-  
+
+  // Restore song-history headers (tour/location views may have replaced them)
+  const _shThead = document.querySelector('#db-song-detail thead tr');
+  if (_shThead) {
+    _shThead.innerHTML = `
+      <th onclick="sortSongDetail('date')">Date <span id="song-detail-date-sort">▲</span></th>
+      <th onclick="sortSongDetail('venue')">Venue <span id="song-detail-venue-sort"></span></th>
+      <th onclick="sortSongDetail('gap')">Gap <span id="song-detail-gap-sort"></span></th>
+      <th onclick="sortSongDetail('set')">Set <span id="song-detail-set-sort"></span></th>
+      <th onclick="sortSongDetail('songBefore')">Song Before</th>
+      <th onclick="sortSongDetail('songAfter')">Song After</th>
+      <th>Notes</th>
+    `;
+  }
+
   // Render performance table
   renderSongDetailTable();
 
@@ -3825,14 +4032,16 @@ function showObsidianSetlistByDate(date) {
   const prevDate = currentIndex > 0 ? obsidianDates[currentIndex - 1] : null;
   const nextDate = currentIndex < obsidianDates.length - 1 ? obsidianDates[currentIndex + 1] : null;
   
-  // Format date for display
-  const [year, month, day] = date.split('-').map(Number);
+  // Format date for display. Strip any "/1", "/2" suffix (used for multiple
+  // shows on the same date) before parsing.
+  const _dateForDisplay = date.split('/')[0];
+  const [year, month, day] = _dateForDisplay.split('-').map(Number);
   const displayDate = new Date(year, month - 1, day).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
-  
+
   // Get jam entries for this date
   const jamEntries = allJams.filter(jam => {
     const jamDbDate = jam.dbDate || (jam.date.includes('-') && jam.date.split('-')[0].length === 4 
