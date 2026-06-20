@@ -3005,6 +3005,14 @@ function renderTourShowsTable(shows, tourName) {
         showLocationShows('state', state);
       });
     });
+
+    document.querySelectorAll('#song-detail-tbody .date-link').forEach(el => {
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const date = this.getAttribute('data-date');
+        if (date) showSetlistForDate(date);
+      });
+    });
   }, 0);
 }
 
