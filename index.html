@@ -305,6 +305,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div id="latest-setlist-container"></div>
 </div>
 
+<div id="page-chucks-dream" class="page-content" style="display:none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+    <h2 style="margin:0; color:var(--yellow);">Chuck's Dream</h2>
+    <button onclick="closeChucksDreamPage()" style="padding:0.5rem 1rem; border-radius:6px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-color); cursor:pointer;">← Back</button>
+  </div>
+  <div class="search-container">
+    <input type="text" id="chucks-dream-search" placeholder="Search song, venue, city, date..." onkeyup="renderChucksDreamTable()">
+  </div>
+  <div class="jam-table-container">
+    <table class="jam-table">
+      <thead>
+        <tr>
+          <th onclick="sortChucksDream('date')">Date <span id="cd-date-sort">▼</span></th>
+          <th onclick="sortChucksDream('song')">Chuck's Dream <span id="cd-song-sort"></span></th>
+          <th onclick="sortChucksDream('venue')">Venue <span id="cd-venue-sort"></span></th>
+          <th onclick="sortChucksDream('location')">Location <span id="cd-location-sort"></span></th>
+          <th onclick="sortChucksDream('tour')">Tour <span id="cd-tour-sort"></span></th>
+        </tr>
+      </thead>
+      <tbody id="chucks-dream-body"></tbody>
+    </table>
+  </div>
+</div>
+
 <div id="page-stats" class="page-content" style="display:none;">
 <div style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1.5rem;">Database Stats</h2>
@@ -402,15 +426,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div id="db-song-detail" class="tab-pane">
     <div style="margin-bottom:1.5rem;">
       <h3 id="song-detail-title" style="color:var(--yellow);font-size:1.8rem;margin-bottom:0.5rem;"></h3>
-      <div style="display:flex;gap:2rem;flex-wrap:wrap;color:var(--muted-color);align-items:center;">
-        <div>Total Performances: <strong id="song-detail-count" style="color:var(--text-color);">-</strong></div>
-        <div>First Played: <strong id="song-detail-first" style="color:var(--text-color);">-</strong></div>
-        <div>Last Played: <strong id="song-detail-last" style="color:var(--text-color);">-</strong></div>
-        <div>Current Gap: <strong id="song-detail-gap" style="color:var(--text-color);">-</strong> shows</div>
-        <input type="text" id="song-detail-new-search" placeholder="Search for another song..." style="margin-left:auto;padding:0.5rem 1rem;border-radius:6px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);width:200px;" onkeyup="if(event.key==='Enter') searchNewSongFromDetail()">
+      <div id="song-detail-stats-block" style="display:flex;flex-direction:column;gap:0.35rem;color:var(--muted-color);">
+        <div>First Played: <span id="song-detail-first" style="color:var(--text-color);">-</span></div>
+        <div>Last Played: <span id="song-detail-last" style="color:var(--text-color);">-</span></div>
+        <div>Total Performances: <span id="song-detail-count" style="color:var(--text-color);">-</span></div>
+        <div id="song-detail-gap-row" style="display:none;">Current Gap: <span id="song-detail-gap" style="color:var(--text-color);">-</span> shows</div>
+        <div id="song-detail-avg-gap-row">Average Gap: <span id="song-detail-avg-gap" style="color:var(--text-color);">-</span> shows</div>
       </div>
     </div>
 
+    <div class="search-container" id="song-detail-new-search-container">
+      <input type="text" id="song-detail-new-search" placeholder="Search for another song..." style="flex:1;" onkeyup="if(event.key==='Enter') searchNewSongFromDetail()">
+    </div>
     <div class="search-container">
       <input type="text" id="song-detail-search" placeholder="Filter dates, venues..." onkeyup="filterSongDetail()" style="flex:1;">
     </div>
@@ -512,17 +539,24 @@ function formatDateForDisplay(dateStr) {
   if (!dateStr) return '';
   try {
     let month, day, year;
-    
-    if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
-      [year, month, day] = dateStr.split('-').map(Number);
-    } 
-    else if (dateStr.includes('/')) {
-      [month, day, year] = dateStr.split('/').map(Number);
+
+    // Strip any "/1", "/2" suffix used for multiple shows on the same date,
+    // but only when the prefix is a YYYY-MM-DD key (not a true M/D/Y date).
+    let s = dateStr;
+    if (/^\d{4}-\d{2}-\d{2}\/\d+$/.test(s)) {
+      s = s.split('/')[0];
+    }
+
+    if (s.includes('-') && s.split('-')[0].length === 4) {
+      [year, month, day] = s.split('-').map(Number);
+    }
+    else if (s.includes('/')) {
+      [month, day, year] = s.split('/').map(Number);
     }
     else {
-      return dateStr;
+      return s;
     }
-    
+
     const monthStr = month.toString().padStart(2, '0');
     const dayStr = day.toString().padStart(2, '0');
     return `${monthStr}-${dayStr}-${year}`;
@@ -691,7 +725,8 @@ function loadJams(){
           }
         }
       } else {
-        if (debugDate) {
+        const _dd = dbDate === '2025-06-13' || dbDate === '2025-01-17';
+        if (_dd) {
           console.log(`❌ NO SHOW DATA: No show data for date ${dbDate}`);
         }
       }
@@ -739,7 +774,19 @@ tr.innerHTML = `
     });
     
     allJams = processedJams;
-    
+
+    // Pick the most-recent year that actually has jam data as the default filter
+    const yearsPresent = Array.from(new Set(allJams.map(j => getJamYear(j)).filter(Boolean))).sort();
+    if (yearsPresent.length) {
+      const newestYear = yearsPresent[yearsPresent.length - 1];
+      if (!yearsPresent.includes(selectedJamYear)) {
+        selectedJamYear = newestYear;
+        document.querySelectorAll('.jam-year-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.year === selectedJamYear);
+        });
+      }
+    }
+
     // HARDCODE 2025-01-17 order
     const jan17Order = [
       "Neutrino", "Peaches", "Broken Wing", "Fake the Fate", "Levilan Shores",
@@ -1311,8 +1358,10 @@ function showSetlistForDate(date) {
   const prevDate = currentIndex > 0 ? allDates[currentIndex - 1] : null;
   const nextDate = currentIndex < allDates.length - 1 ? allDates[currentIndex + 1] : null;
   
-  // Format date for display (Month Date, Year)
-  const [year, month, day] = dbDate.split('-').map(Number);
+  // Format date for display (Month Date, Year). Strip any "/1", "/2" suffix
+  // used for multiple shows on the same date before parsing.
+  const _dateForDisplay = dbDate.split('/')[0];
+  const [year, month, day] = _dateForDisplay.split('-').map(Number);
   const displayDate = new Date(year, month - 1, day).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -1322,6 +1371,8 @@ function showSetlistForDate(date) {
   // Hide other pages, show setlist page
   document.getElementById('page-jams').style.display = 'none';
   document.getElementById('page-stats').style.display = 'none';
+  const cdPage = document.getElementById('page-chucks-dream');
+  if (cdPage) cdPage.style.display = 'none';
   
   let setlistPage = document.getElementById('page-setlist');
   if (!setlistPage) {
@@ -1386,10 +1437,10 @@ function showSetlistForDate(date) {
         const processedContent = makeAllSongsClickable(show.sets[setName], jamEntries);
         content += `<div style="margin-bottom: 0.75rem;"><strong>${setName}:</strong> ${processedContent}</div>`;
         
-            // Display Chuck's Dream after Set 1 - as plain text, not clickable
+            // Display Chuck's Dream after Set 1 - label is clickable, opens Chuck's Dream page
 		if (setName === 'Set 1' && show.sets["Chuck's Dream"] && !displayedChucksDream) {
       const chucksContent = cleanMarkdown(show.sets["Chuck's Dream"]);
-      content += `<div style="margin-bottom: 0.75rem; font-style: italic;"><strong>Chuck's Dream:</strong> ${chucksContent}</div>`;
+      content += `<div style="margin-bottom: 0.75rem; font-style: italic;"><strong class="chucks-dream-link" style="cursor:pointer;">Chuck's Dream:</strong> ${chucksContent}</div>`;
       displayedChucksDream = true;
 		}
       }
@@ -1740,6 +1791,182 @@ function closeSetlistPage() {
   document.getElementById('page-setlist').style.display = 'none';
   switchPageByName('jams');
 }
+
+/* ===== Chuck's Dream hidden page ===== */
+let _chucksDreamSort = { column: 'date', direction: 'desc' };
+let _chucksDreamPrevPage = 'setlist';
+
+function openChucksDreamPage() {
+  // Remember where the user came from so Back returns there
+  const visible = document.querySelector('.page-content[style*="block"], .page-content:not([style*="none"])');
+  if (visible && visible.id) {
+    _chucksDreamPrevPage = visible.id.replace(/^page-/, '');
+  }
+  document.querySelectorAll('.page-tab').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.page-content').forEach(pane => pane.style.display = 'none');
+  document.getElementById('page-chucks-dream').style.display = 'block';
+  renderChucksDreamTable();
+  window.scrollTo(0, 0);
+}
+
+function closeChucksDreamPage() {
+  document.getElementById('page-chucks-dream').style.display = 'none';
+  if (_chucksDreamPrevPage === 'setlist') {
+    document.querySelector('.page-tab[onclick*="setlist"]')?.classList.add('active');
+    document.getElementById('page-setlist').style.display = 'block';
+  } else {
+    switchPageByName(_chucksDreamPrevPage);
+  }
+}
+
+function _chucksDreamRows() {
+  const rows = [];
+  Object.keys(dbShows).forEach(key => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return; // skip /1, /2 dup keys
+    const show = dbShows[key];
+    if (!show) return;
+    let song = (show.sets && show.sets["Chuck's Dream"]) || show.chucks_dream || '';
+    song = (song || '').toString().trim();
+    if (!song || song === '-' || /^rating:/i.test(song)) return;
+    rows.push({
+      date: key,
+      song: cleanMarkdown ? cleanMarkdown(song) : song,
+      venue: show.venue || '',
+      city: show.city || '',
+      state: show.state || '',
+      tour: show.tour || ''
+    });
+  });
+  return rows;
+}
+
+function renderChucksDreamTable() {
+  const body = document.getElementById('chucks-dream-body');
+  if (!body) return;
+  const search = (document.getElementById('chucks-dream-search')?.value || '').toLowerCase().trim();
+
+  let rows = _chucksDreamRows();
+  if (search) {
+    rows = rows.filter(r =>
+      r.song.toLowerCase().includes(search) ||
+      r.venue.toLowerCase().includes(search) ||
+      r.city.toLowerCase().includes(search) ||
+      r.state.toLowerCase().includes(search) ||
+      r.tour.toLowerCase().includes(search) ||
+      r.date.includes(search)
+    );
+  }
+
+  const { column, direction } = _chucksDreamSort;
+  rows.sort((a, b) => {
+    let va, vb;
+    if (column === 'location') { va = `${a.city}, ${a.state}`; vb = `${b.city}, ${b.state}`; }
+    else { va = a[column] || ''; vb = b[column] || ''; }
+    va = va.toString().toLowerCase();
+    vb = vb.toString().toLowerCase();
+    if (va === vb) return 0;
+    return direction === 'asc' ? (va < vb ? -1 : 1) : (va < vb ? 1 : -1);
+  });
+
+  // Refresh sort indicators
+  ['date', 'song', 'venue', 'location', 'tour'].forEach(col => {
+    const el = document.getElementById(`cd-${col}-sort`);
+    if (!el) return;
+    el.textContent = col === column ? (direction === 'asc' ? '▲' : '▼') : '';
+  });
+
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted-color);padding:2rem;">No Chuck's Dream entries found.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = rows.map(r => {
+    const [y, m, d] = r.date.split('-');
+    const displayDate = `${m}-${d}-${y}`;
+    const cityCell = r.city
+      ? `<span class="clickable-city" data-city="${r.city}" style="cursor:pointer;color:var(--yellow);">${r.city}</span>`
+      : '';
+    const stateCell = r.state
+      ? `<span class="clickable-state" data-state="${r.state}" style="cursor:pointer;color:var(--yellow);">${r.state}</span>`
+      : '';
+    const locationCell = [cityCell, stateCell].filter(Boolean).join(', ');
+    const venueCell = r.venue
+      ? `<span class="clickable-venue" data-venue="${r.venue}" style="cursor:pointer;color:var(--yellow);">${r.venue}</span>`
+      : '';
+    const tourCell = r.tour
+      ? `<span class="clickable-tour" data-tour="${r.tour}" style="cursor:pointer;color:var(--yellow);">${r.tour}</span>`
+      : '';
+    return `<tr>
+      <td><span class="date-link" data-date="${r.date}" style="cursor:pointer;color:var(--yellow);">${displayDate}</span></td>
+      <td>${r.song}</td>
+      <td>${venueCell}</td>
+      <td>${locationCell}</td>
+      <td>${tourCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+function sortChucksDream(column) {
+  if (_chucksDreamSort.column === column) {
+    _chucksDreamSort.direction = _chucksDreamSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    _chucksDreamSort.column = column;
+    _chucksDreamSort.direction = 'asc';
+  }
+  renderChucksDreamTable();
+}
+
+// Delegate clicks on the "Chuck's Dream:" label inside any setlist view
+document.addEventListener('click', e => {
+  const target = e.target.closest('.chucks-dream-link');
+  if (target) {
+    e.stopPropagation();
+    openChucksDreamPage();
+    return;
+  }
+  // Song-detail stats: First/Last Played date links → open that setlist
+  const statsDate = e.target.closest('#song-detail-stats-block .date-link');
+  if (statsDate) {
+    e.stopPropagation();
+    const date = statsDate.getAttribute('data-date');
+    if (typeof showSetlistForDate === 'function' && date) showSetlistForDate(date);
+    return;
+  }
+  // Inside the Chuck's Dream table: date → setlist; venue/city/state/tour → locations / tour page
+  const cdRow = e.target.closest('#chucks-dream-body');
+  if (!cdRow) return;
+  const dl = e.target.closest('.date-link');
+  if (dl) {
+    e.stopPropagation();
+    const date = dl.getAttribute('data-date');
+    if (typeof showSetlistForDate === 'function' && date) showSetlistForDate(date);
+    return;
+  }
+  const v = e.target.closest('.clickable-venue');
+  if (v) {
+    e.stopPropagation();
+    if (typeof showLocationShows === 'function') showLocationShows('venue', v.getAttribute('data-venue'));
+    return;
+  }
+  const c = e.target.closest('.clickable-city');
+  if (c) {
+    e.stopPropagation();
+    if (typeof showLocationShows === 'function') showLocationShows('city', c.getAttribute('data-city'));
+    return;
+  }
+  const s = e.target.closest('.clickable-state');
+  if (s) {
+    e.stopPropagation();
+    if (typeof showLocationShows === 'function') showLocationShows('state', s.getAttribute('data-state'));
+    return;
+  }
+  const t = e.target.closest('.clickable-tour');
+  if (t) {
+    e.stopPropagation();
+    if (typeof showTourShows === 'function') showTourShows(t.getAttribute('data-tour'));
+    return;
+  }
+});
 
 // FIXED CLICK HANDLERS - dates don't trigger search
 tableBody.addEventListener('click', e => {
@@ -2092,39 +2319,220 @@ function sortDbSongs(column) {
   filterDbSongs();
 }
 
+// Manually-curated aliases for cases pure normalization can't catch.
+// Key format: "normalizedName|cityLower|stateLower" -> canonical normalizedName
+const MANUAL_VENUE_ALIASES = {};
+
+// Force a specific display name for a merged group whose default (shortest variant)
+// isn't the recognizable canonical name.
+// Key format: "${canonicalNormName}||${cityLower}||${stateLower}" -> display string.
+const MANUAL_VENUE_DISPLAYS = {};
+
+// Normalize a venue name into a grouping key so name variants merge.
+// Examples: "Antone's Night Club" / "Antone's Nightclub" / "Antone's" -> "antones"
+//           "Fox Theatre" / "Fox Theater" -> "fox theater"
+//           "Volcanic Theatre Pub" -> "volcanic theater"
+function _normalizeVenueName(name) {
+  if (!name) return '';
+  let s = String(name).toLowerCase().trim();
+  s = s.replace(/&/g, ' and ');
+  s = s.replace(/[^\w\s]/g, '');             // strip punctuation: antone's -> antones
+  s = s.replace(/\bcompany\b/g, 'co');       // company -> co (abbreviation collapse)
+  s = s.replace(/\btheatre\b/g, 'theater'); // British -> American spelling
+  s = s.replace(/^the\s+/, '');               // strip leading "the "
+  // Strip common venue-type suffixes (apply repeatedly so multi-suffix tails collapse)
+  for (let i = 0; i < 3; i++) {
+    s = s.replace(/\s+(night\s*club|club|pub|tavern|bar\s+and\s+stage|bar|lounge|venue)$/, '');
+  }
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
+}
+function _venueGroupKey(venue, city, state) {
+  let v = _normalizeVenueName(venue);
+  const cityNorm = (city || '').toLowerCase().trim();
+  const stateNorm = (state || '').toLowerCase().trim();
+
+  // (We intentionally do NOT strip the city name here — the fuzzy/Jaccard pass
+  //  below merges variants like "Buffalo Iron Works" / "Iron Works" naturally,
+  //  and keeping the city in the token set lets "Crystal Bay Casino" merge with
+  //  "Crystal Bay Club Crown Room" via shared tokens.)
+
+  // Apply manual aliases
+  const aliasKey = `${v}|${cityNorm}|${stateNorm}`;
+  if (MANUAL_VENUE_ALIASES[aliasKey]) v = MANUAL_VENUE_ALIASES[aliasKey];
+
+  return `${v}||${cityNorm}||${stateNorm}`;
+}
+
+// Edit distance, with early-exit when difference clearly exceeds threshold.
+function _editDistance(a, b) {
+  if (!a || !b) return Math.max((a || '').length, (b || '').length);
+  if (Math.abs(a.length - b.length) > 2) return 999;
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// Jaccard token-overlap similarity. Returns {score, intersect}.
+function _tokenSetForVenue(name) {
+  return new Set(name.split(/\s+/).filter(Boolean));
+}
+function _jaccardSim(a, b) {
+  if (!a.size || !b.size) return { score: 0, intersect: 0 };
+  let intersect = 0;
+  a.forEach(x => { if (b.has(x)) intersect++; });
+  return { score: intersect / (a.size + b.size - intersect), intersect };
+}
+
+// Fuzzy second-pass with union-find so transitive matches chain together.
+// Merges groups within the same (city, state) when EITHER
+//   - normalized names differ by ≤ 1 edit (catches typos: "Sprits"/"Spirits"), OR
+//   - token-overlap Jaccard ≥ 0.5 with ≥ 2 shared tokens
+//     (catches variants like "Crystal Bay Casino"/"Crystal Bay Club Crown Room"
+//      that share enough words to be the same physical venue).
+function _fuzzyMergeVenueGroups(venueStats) {
+  const buckets = {};
+  Object.entries(venueStats).forEach(([key, group]) => {
+    const cs = `${(group.city || '').toLowerCase()}||${(group.state || '').toLowerCase()}`;
+    if (!buckets[cs]) buckets[cs] = [];
+    buckets[cs].push(key);
+  });
+
+  Object.values(buckets).forEach(keys => {
+    if (keys.length < 2) return;
+
+    // Union-find for transitive merge
+    const parent = new Map(keys.map(k => [k, k]));
+    const find = k => {
+      while (parent.get(k) !== k) {
+        parent.set(k, parent.get(parent.get(k)));
+        k = parent.get(k);
+      }
+      return k;
+    };
+    const union = (a, b) => {
+      const ra = find(a), rb = find(b);
+      if (ra !== rb) parent.set(ra, rb);
+    };
+
+    // Precompute token sets
+    const tokens = new Map(keys.map(k => [k, _tokenSetForVenue(k.split('||')[0])]));
+
+    for (let i = 0; i < keys.length; i++) {
+      for (let j = i + 1; j < keys.length; j++) {
+        const ki = keys[i], kj = keys[j];
+        const ni = ki.split('||')[0], nj = kj.split('||')[0];
+        if (!ni || !nj) continue;
+        if (_editDistance(ni, nj) <= 1) {
+          union(ki, kj);
+          continue;
+        }
+        const sim = _jaccardSim(tokens.get(ki), tokens.get(kj));
+        if (sim.intersect >= 2 && sim.score >= 0.5) {
+          union(ki, kj);
+        }
+      }
+    }
+
+    // Collect clusters and merge each into its largest-show member
+    const clusters = new Map();
+    keys.forEach(k => {
+      const r = find(k);
+      if (!clusters.has(r)) clusters.set(r, []);
+      clusters.get(r).push(k);
+    });
+
+    clusters.forEach(members => {
+      if (members.length < 2) return;
+      members.sort((a, b) => venueStats[b].shows.length - venueStats[a].shows.length);
+      const survivor = venueStats[members[0]];
+      for (let i = 1; i < members.length; i++) {
+        const other = venueStats[members[i]];
+        other.aliases.forEach(x => survivor.aliases.add(x));
+        survivor.shows.push(...other.shows);
+        if (new Date(other.firstShow) < new Date(survivor.firstShow)) survivor.firstShow = other.firstShow;
+        if (new Date(other.lastShow) > new Date(survivor.lastShow)) survivor.lastShow = other.lastShow;
+        // Keep the larger group's display name — don't let smaller variants override it.
+        delete venueStats[members[i]];
+      }
+    });
+  });
+}
+
+// Map: original venue name (case-sensitive) -> canonical display name we picked.
+// Used by showLocationShows so clicking any variant shows the merged set of shows.
+let _venueDisplayByOriginal = {};
+let _venueAliasesByDisplay = {};
+
 function renderDbLocations() {
   const tbody = document.getElementById('db-locations-tbody');
   tbody.innerHTML = '';
   dbLocationRows = [];
-  
-  // Build a list of unique venues with their stats
+  _venueDisplayByOriginal = {};
+  _venueAliasesByDisplay = {};
+
+  // Build venue groups keyed by (normalized venue, city, state)
   const venueStats = {};
-  
+
   dbDates.forEach(date => {
     const show = dbShows[date];
     const venue = show.venue || 'Unknown';
     const city = show.city || 'Unknown';
     const state = show.state || '';
-    const locationKey = `${city}, ${state}`.trim();
-    
-    if (!venueStats[venue]) {
-      venueStats[venue] = {
+    const groupKey = _venueGroupKey(venue, city, state);
+
+    if (!venueStats[groupKey]) {
+      venueStats[groupKey] = {
         venue: venue,
         city: city,
         state: state,
+        aliases: new Set([venue]),
         shows: [],
         firstShow: date,
         lastShow: date
       };
+    } else {
+      venueStats[groupKey].aliases.add(venue);
+      // Prefer the shortest variant as the display name (e.g. "Antone's" over "Antone's Nightclub")
+      if (venue.length < venueStats[groupKey].venue.length) {
+        venueStats[groupKey].venue = venue;
+      }
     }
-    
-    venueStats[venue].shows.push(date);
-    if (new Date(date) < new Date(venueStats[venue].firstShow)) {
-      venueStats[venue].firstShow = date;
+
+    venueStats[groupKey].shows.push(date);
+    if (new Date(date) < new Date(venueStats[groupKey].firstShow)) {
+      venueStats[groupKey].firstShow = date;
     }
-    if (new Date(date) > new Date(venueStats[venue].lastShow)) {
-      venueStats[venue].lastShow = date;
+    if (new Date(date) > new Date(venueStats[groupKey].lastShow)) {
+      venueStats[groupKey].lastShow = date;
     }
+  });
+
+  // Fuzzy second pass: catch typo variants like "Low Sprits" vs "Low Spirits"
+  _fuzzyMergeVenueGroups(venueStats);
+
+  // Apply manual display-name overrides where the shortest variant isn't canonical
+  Object.entries(venueStats).forEach(([key, group]) => {
+    if (MANUAL_VENUE_DISPLAYS[key]) group.venue = MANUAL_VENUE_DISPLAYS[key];
+    // Standardize trailing "Co" -> "Co." (e.g. "Pisgah Brewing Co" -> "Pisgah Brewing Co.")
+    group.venue = group.venue.replace(/\bCo$/, 'Co.');
+  });
+
+  // Build the alias lookup tables used by showLocationShows
+  Object.values(venueStats).forEach(g => {
+    const display = g.venue;
+    const aliasList = Array.from(g.aliases);
+    _venueAliasesByDisplay[display] = aliasList;
+    aliasList.forEach(a => { _venueDisplayByOriginal[a] = display; });
   });
   
   // Convert to array for sorting
@@ -2415,11 +2823,14 @@ function showLocationShows(type, value) {
   
   // Find shows based on location type
   if (type === 'venue') {
+    // Use the alias group so "Antone's Nightclub" / "Antone's Night Club" / "Antone's" all merge
+    const displayName = _venueDisplayByOriginal[value] || value;
+    const aliasSet = new Set(_venueAliasesByDisplay[displayName] || [value]);
     shows = dbDates.filter(date => {
       const show = dbShows[date];
-      return show.venue === value;
+      return aliasSet.has(show.venue);
     });
-    title = `Shows at ${value}`;
+    title = `Shows at ${displayName}`;
   } else if (type === 'city') {
     shows = dbDates.filter(date => {
       const show = dbShows[date];
@@ -2444,6 +2855,8 @@ function showLocationShows(type, value) {
   
   // Update header info
   document.getElementById('song-detail-title').textContent = title;
+  document.getElementById('song-detail-stats-block').style.display = '';
+  document.getElementById('song-detail-new-search-container').style.display = '';
   document.getElementById('song-detail-count').textContent = shows.length;
   document.getElementById('song-detail-first').textContent = formatDateForDisplay(shows[0]) || '-';
   document.getElementById('song-detail-last').textContent = formatDateForDisplay(shows[shows.length - 1]) || '-';
@@ -2453,6 +2866,9 @@ function showLocationShows(type, value) {
   const lastShowIndex = dbDates.indexOf(lastShowDate);
   const currentGap = lastShowIndex !== -1 ? dbDates.length - 1 - lastShowIndex : '-';
   document.getElementById('song-detail-gap').textContent = currentGap;
+  // Location view: show current gap, hide average gap (not meaningful here)
+  document.getElementById('song-detail-gap-row').style.display = '';
+  document.getElementById('song-detail-avg-gap-row').style.display = 'none';
   
   // Clear the new song search input
   document.getElementById('song-detail-new-search').value = '';
@@ -2473,21 +2889,9 @@ function showTourShows(tourName) {
   });
   
   document.getElementById('song-detail-title').textContent = `${tourName}`;
-  document.getElementById('song-detail-count').textContent = shows.length;
-  document.getElementById('song-detail-first').textContent = formatDateForDisplay(shows[0]) || '-';
-  document.getElementById('song-detail-last').textContent = formatDateForDisplay(shows[shows.length - 1]) || '-';
-
-  // Calculate gap between first and last show in tour
-  if (shows.length > 1) {
-    const firstIndex = dbDates.indexOf(shows[0]);
-    const lastIndex = dbDates.indexOf(shows[shows.length - 1]);
-    const totalGap = lastIndex - firstIndex;
-    document.getElementById('song-detail-gap').textContent = `${totalGap} shows span`;
-  } else {
-    document.getElementById('song-detail-gap').textContent = '-';
-  }
-  
-  document.getElementById('song-detail-new-search').value = '';
+  // Tour view: hide the entire stats block and "search for another song" container
+  document.getElementById('song-detail-stats-block').style.display = 'none';
+  document.getElementById('song-detail-new-search-container').style.display = 'none';
   
   renderTourShowsTable(shows, tourName);
   switchDbTab('song-detail');
@@ -2547,7 +2951,7 @@ function renderLocationShowsTable(shows, title, type, value) {
     
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="date-link" data-date="${date}" style="cursor: pointer; color: var(--text-color);">${date}</span></td>
+      <td><span class="date-link" data-date="${date}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(date)}</span></td>
       <td><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--yellow);">${show.venue || 'Unknown'}</span></td>
       <td><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--yellow);">${show.city || 'Unknown'}</span></td>
       <td><span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--yellow);">${show.state || ''}</span></td>
@@ -2692,50 +3096,81 @@ function getCellValue(row, column) {
   }
 }
 
+let _tourShowsSort = { column: 'show_number', direction: 'asc' };
+let _tourShowsRows = [];
+let _tourShowsName = '';
+
 function renderTourShowsTable(shows, tourName) {
   const tbody = document.getElementById('song-detail-tbody');
   tbody.innerHTML = '';
-  
-  if (shows.length === 0) {
+
+  if (tourName !== undefined) {
+    _tourShowsName = tourName;
+    // Build the row data once (cached so re-sorts don't re-parse setlists)
+    _tourShowsRows = shows.map(date => {
+      const show = dbShows[date] || {};
+      let totalSongs = 0;
+      const sets = show.sets || {};
+      Object.values(sets).forEach(setContent => {
+        totalSongs += parseDbSetlist(setContent).length;
+      });
+      const showNum = parseInt(show.show_number);
+      return {
+        date,
+        venue: show.venue || '',
+        city: show.city || '',
+        state: show.state || '',
+        location: `${show.city || ''}${show.state ? ', ' + show.state : ''}`,
+        total_songs: totalSongs,
+        show_number: Number.isFinite(showNum) ? showNum : null
+      };
+    });
+    // Reset default each time you enter a new tour view
+    _tourShowsSort = { column: 'show_number', direction: 'asc' };
+  }
+
+  if (!_tourShowsRows.length) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted-color);">No shows found</td></tr>';
     return;
   }
-  
-  // Sort shows by date (newest first)
-  shows.sort((a, b) => new Date(b) - new Date(a));
-  
-  shows.forEach(date => {
-    const show = dbShows[date];
-    if (!show) return;
-    
-    // Count total songs in the show
-    let totalSongs = 0;
-    const sets = show.sets || {};
-    Object.values(sets).forEach(setContent => {
-      const songs = parseDbSetlist(setContent);
-      totalSongs += songs.length;
-    });
-    
+
+  const { column, direction } = _tourShowsSort;
+  const dir = direction === 'asc' ? 1 : -1;
+  const sorted = [..._tourShowsRows].sort((a, b) => {
+    let va = a[column], vb = b[column];
+    if (column === 'date') return dir * (new Date(va) - new Date(vb));
+    if (column === 'total_songs' || column === 'show_number') {
+      const na = va == null ? Infinity : va;
+      const nb = vb == null ? Infinity : vb;
+      return dir * (na - nb);
+    }
+    va = (va || '').toString().toLowerCase();
+    vb = (vb || '').toString().toLowerCase();
+    if (va === vb) return 0;
+    return dir * (va < vb ? -1 : 1);
+  });
+
+  sorted.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="date-link" data-date="${date}" style="cursor: pointer; color: var(--text-color);">${date}</span></td>
-      <td><span class="clickable-venue" data-venue="${show.venue}" style="cursor: pointer; color: var(--yellow);">${show.venue || 'Unknown'}</span></td>
-      <td><span class="clickable-city" data-city="${show.city}" style="cursor: pointer; color: var(--yellow);">${show.city || 'Unknown'}</span>, <span class="clickable-state" data-state="${show.state}" style="cursor: pointer; color: var(--yellow);">${show.state || ''}</span></td>
-      <td>${totalSongs}</td>
-      <td>${show.show_number || '-'}</td>
+      <td><span class="date-link" data-date="${r.date}" style="cursor: pointer; color: var(--text-color);">${r.date}</span></td>
+      <td><span class="clickable-venue" data-venue="${r.venue}" style="cursor: pointer; color: var(--yellow);">${r.venue || 'Unknown'}</span></td>
+      <td><span class="clickable-city" data-city="${r.city}" style="cursor: pointer; color: var(--yellow);">${r.city || 'Unknown'}</span>, <span class="clickable-state" data-state="${r.state}" style="cursor: pointer; color: var(--yellow);">${r.state || ''}</span></td>
+      <td>${r.total_songs}</td>
+      <td>${r.show_number ?? '-'}</td>
     `;
-    
     tbody.appendChild(tr);
   });
-  
-  // Update the table headers for tour shows
+
+  // Update the table headers for tour shows — every column is clickable
+  const ind = col => column === col ? (direction === 'asc' ? ' ▲' : ' ▼') : '';
   const thead = document.querySelector('#db-song-detail thead tr');
   thead.innerHTML = `
-    <th>Date</th>
-    <th>Venue</th>
-    <th>Location</th>
-    <th>Total Songs</th>
-    <th>Show #</th>
+    <th onclick="sortTourShows('date')" style="cursor:pointer;">Date${ind('date')}</th>
+    <th onclick="sortTourShows('venue')" style="cursor:pointer;">Venue${ind('venue')}</th>
+    <th onclick="sortTourShows('location')" style="cursor:pointer;">Location${ind('location')}</th>
+    <th onclick="sortTourShows('total_songs')" style="cursor:pointer;">Total Songs${ind('total_songs')}</th>
+    <th onclick="sortTourShows('show_number')" style="cursor:pointer;">Show #${ind('show_number')}</th>
   `;
   
   // Set up click handlers
@@ -2763,7 +3198,25 @@ function renderTourShowsTable(shows, tourName) {
         showLocationShows('state', state);
       });
     });
+
+    document.querySelectorAll('#song-detail-tbody .date-link').forEach(el => {
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const date = this.getAttribute('data-date');
+        if (date) showSetlistForDate(date);
+      });
+    });
   }, 0);
+}
+
+function sortTourShows(column) {
+  if (_tourShowsSort.column === column) {
+    _tourShowsSort.direction = _tourShowsSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    _tourShowsSort.column = column;
+    _tourShowsSort.direction = 'asc';
+  }
+  renderTourShowsTable(); // re-render using cached rows
 }
 
 // Add click handlers for stats tables
@@ -2862,22 +3315,72 @@ function showSongDetail(normSongName) {
   
   // Update header info
   document.getElementById('song-detail-title').textContent = song.name;
+  // Restore stats block and "search for another song" (in case we got here from a tour view)
+  document.getElementById('song-detail-stats-block').style.display = '';
+  document.getElementById('song-detail-new-search-container').style.display = '';
   document.getElementById('song-detail-count').textContent = song.performances.length;
-  document.getElementById('song-detail-first').textContent = formatDateForDisplay(song.firstPlayed);
-  document.getElementById('song-detail-last').textContent = formatDateForDisplay(song.lastPlayed);
-  
+
+  const firstIdx = dbDates.indexOf(song.firstPlayed);
   const lastIdx = dbDates.indexOf(song.lastPlayed);
-  const currentGap = dbDates.length - 1 - lastIdx;
-  document.getElementById('song-detail-gap').textContent = currentGap;
-  
+  const totalShows = dbDates.length;
+  const firstAgo = firstIdx >= 0 ? (totalShows - 1 - firstIdx) : null;
+  const lastAgo = lastIdx >= 0 ? (totalShows - 1 - lastIdx) : null;
+  const firstDateDisp = formatDateForDisplay(song.firstPlayed);
+  const lastDateDisp = formatDateForDisplay(song.lastPlayed);
+  document.getElementById('song-detail-first').innerHTML =
+    `<span class="date-link" data-date="${song.firstPlayed}" style="cursor:pointer;color:var(--yellow);">${firstDateDisp}</span>` +
+    (firstAgo != null ? ` <span style="color:var(--muted-color);">(${firstAgo} shows ago)</span>` : '');
+  const lastAgoNum = lastAgo != null
+    ? (lastAgo > 50 ? `<strong>${lastAgo}</strong>` : String(lastAgo))
+    : null;
+  document.getElementById('song-detail-last').innerHTML =
+    `<span class="date-link" data-date="${song.lastPlayed}" style="cursor:pointer;color:var(--yellow);">${lastDateDisp}</span>` +
+    (lastAgoNum != null ? ` <span style="color:var(--muted-color);">(${lastAgoNum} shows ago)</span>` : '');
+
+  // Song history view: hide current gap, show average gap
+  document.getElementById('song-detail-gap-row').style.display = 'none';
+  document.getElementById('song-detail-avg-gap-row').style.display = '';
+
+  // Average gap between consecutive performances (in shows)
+  const uniqueIndices = Array.from(new Set(
+    (song.performances || []).map(d => dbDates.indexOf(d)).filter(i => i >= 0)
+  )).sort((a, b) => a - b);
+  let avgGapText = '-';
+  if (uniqueIndices.length >= 2) {
+    let totalGap = 0;
+    for (let i = 1; i < uniqueIndices.length; i++) {
+      totalGap += (uniqueIndices[i] - uniqueIndices[i - 1] - 1);
+    }
+    const avg = totalGap / (uniqueIndices.length - 1);
+    avgGapText = Number.isInteger(avg) ? String(avg) : avg.toFixed(2);
+  }
+  document.getElementById('song-detail-avg-gap').textContent = avgGapText;
+
   // Clear the new song search input
   document.getElementById('song-detail-new-search').value = '';
-  
+
+  // Restore song-history headers (tour/location views may have replaced them)
+  const _shThead = document.querySelector('#db-song-detail thead tr');
+  if (_shThead) {
+    _shThead.innerHTML = `
+      <th onclick="sortSongDetail('date')">Date <span id="song-detail-date-sort">▲</span></th>
+      <th onclick="sortSongDetail('venue')">Venue <span id="song-detail-venue-sort"></span></th>
+      <th onclick="sortSongDetail('gap')">Gap <span id="song-detail-gap-sort"></span></th>
+      <th onclick="sortSongDetail('set')">Set <span id="song-detail-set-sort"></span></th>
+      <th onclick="sortSongDetail('songBefore')">Song Before</th>
+      <th onclick="sortSongDetail('songAfter')">Song After</th>
+      <th>Notes</th>
+    `;
+  }
+
   // Render performance table
   renderSongDetailTable();
-  
+
   // Switch to song detail tab
   switchDbTab('song-detail');
+
+  // Always start at the top when entering a song's history
+  window.scrollTo(0, 0);
 }
 
 function renderSongDetailTable() {
@@ -3475,6 +3978,10 @@ function resetToDefaultPage() {
   // Go back to Jam Chart
   document.getElementById("page-jams").style.display = "block";
   document.getElementById("page-stats").style.display = "none";
+  const _cdPage = document.getElementById("page-chucks-dream");
+  if (_cdPage) _cdPage.style.display = "none";
+  const _setlistPage = document.getElementById("page-setlist");
+  if (_setlistPage) _setlistPage.style.display = "none";
 
   // Reset filters and search
   document.getElementById("search-input").value = "";
@@ -3525,14 +4032,16 @@ function showObsidianSetlistByDate(date) {
   const prevDate = currentIndex > 0 ? obsidianDates[currentIndex - 1] : null;
   const nextDate = currentIndex < obsidianDates.length - 1 ? obsidianDates[currentIndex + 1] : null;
   
-  // Format date for display
-  const [year, month, day] = date.split('-').map(Number);
+  // Format date for display. Strip any "/1", "/2" suffix (used for multiple
+  // shows on the same date) before parsing.
+  const _dateForDisplay = date.split('/')[0];
+  const [year, month, day] = _dateForDisplay.split('-').map(Number);
   const displayDate = new Date(year, month - 1, day).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
-  
+
   // Get jam entries for this date
   const jamEntries = allJams.filter(jam => {
     const jamDbDate = jam.dbDate || (jam.date.includes('-') && jam.date.split('-')[0].length === 4 
@@ -3587,7 +4096,7 @@ function showObsidianSetlistByDate(date) {
         
         if (setName === 'Set 1' && show.sets["Chuck's Dream"] && !displayedChucksDream) {
           const chucksContent = cleanMarkdown(show.sets["Chuck's Dream"]);
-          content += `<div style="margin-bottom: 0.75rem; font-style: italic;"><strong>Chuck's Dream:</strong> ${chucksContent}</div>`;
+          content += `<div style="margin-bottom: 0.75rem; font-style: italic;"><strong class="chucks-dream-link" style="cursor:pointer;">Chuck's Dream:</strong> ${chucksContent}</div>`;
           displayedChucksDream = true;
         }
       }
