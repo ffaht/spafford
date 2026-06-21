@@ -3529,8 +3529,7 @@
     "song": "Darkness Singularity",
     "timing": "5:50",
     "venue": "Vivarium",
-    "notes": "\nEnding only. Builds angrily and energetically to finish out the year.\n",
-    "occurrence": 2
+    "notes": "\nEnding only. Builds angrily and energetically to finish out the year.\n"
   },
   {
     "date": "2025-12-31",
@@ -4638,7 +4637,7 @@
     "timing": "21:08",
     "venue": "Bowstring Brewyard",
     "highlighted": true,
-    "notes": "\nAmbient Pop that bubbles and progresses into rich Space Age Pop, increasing its volume and wingspan as it incorporates new, melodic vocal samples that sing with the music until a full-band push into full-blown celebratory electronica that breaks the emotion and sound barriers in extraordinary fashion.\n"
+    "notes": "\nAmbient pop that bubbles and progresses into rich space age pop, increasing its volume and wingspan as it incorporates new, melodic vocal samples that sing with the music until a full-band push into full-blown celebratory electronica that breaks the emotion and sound barriers in extraordinary fashion.\n"
   },
   {
     "date": "2026-04-16",
@@ -4749,7 +4748,7 @@
     "timing": "23:09",
     "venue": "Charleston Pour House",
     "highlighted": true,
-    "notes": "\nIt's outings like this, with such a confident and powerful run through the song itself, that reinforce the notion that there are many more payoffs than the \"pursuit\" and \"trance\" themselves. But then again, when doesn't that happen? A(nother) spectacle of an introduction, and a jam that slips straight in between streams of light within a celestial showcase for high quality livetronica.\n"
+    "notes": "\nIt's outings like this, with such a confident and powerful run through the song itself, that reinforce the notion that there are many more payoffs than the \"pursuit\" and \"trance\" themselves. Another spectacle of an introduction, and a jam that slips straight in between streams of light within a celestial showcase for high quality livetronica.\n"
   },
   {
     "date": "2026-04-19",
@@ -4770,7 +4769,7 @@
     "song": "Comfortable",
     "timing": "19:07",
     "venue": "Redstone Room",
-    "notes": "\nFlashes hypnotic lights above a desert planet until bursting into slightly menacing, funky Art Pop that speeds with intent -> Darkness Singularity. Do not sleep on this build!\n"
+    "notes": "\nFlashes hypnotic lights above a desert planet until bursting into slightly menacing, funky art pop that speeds with intent -> Darkness Singularity. Do not sleep on this build!\n"
   },
   {
     "date": "2026-06-16",
@@ -4791,7 +4790,7 @@
     "song": "Soggy Froggy",
     "timing": "21:48",
     "venue": "Hobart Art Theater",
-    "notes": "\nAn Acid Disco of paint that splatters and takes the form of dancing projections before dripping down to industrial workings where it shakes out of itself and into a Latin noir thriller.\n"
+    "notes": "\nAn acid disco of paint that splatters and takes the form of dancing projections before dripping down to industrial workings where it shakes out of itself and into a Latin noir thriller.\n"
   },
   {
     "date": "2026-06-17",
@@ -4806,5 +4805,41 @@
     "timing": "20:26",
     "venue": "Hobart Art Theater",
     "notes": "\nActive livetronica for the first eight (!) and a half minutes before dipping into The Reprise proper.\n"
+  },
+  {
+    "date": "2026-06-18",
+    "song": "Ain't That Wrong",
+    "timing": "14:12",
+    "venue": "Warner Vineyards",
+    "notes": "\nDialed-in, cyclical grooving that teeters on the edge of synthwave for a few minutes. Perfect (perfect!) drop -> Can't Find My Vape, too.\n"
+  },
+  {
+    "date": "2026-06-18",
+    "song": "Alternate Ending",
+    "timing": "12:33",
+    "venue": "Warner Vineyards",
+    "notes": "\nAbsolutely fantastic guitar work from Brian throughout.\n"
+  },
+  {
+    "date": "2026-06-18",
+    "song": "Cantaloupe Island",
+    "timing": "13:30",
+    "venue": "Warner Vineyards",
+    "notes": "\nAn extended outing with some extra juice on it! \n"
+  },
+  {
+    "date": "2026-06-18",
+    "song": "Gotta Save Fred",
+    "timing": "23:02",
+    "venue": "Warner Vineyards",
+    "notes": "\nVirtual window shopping for alternative universes and an intense, near-destined segue -> ETS's ending.\n"
+  },
+  {
+    "date": "2026-06-18",
+    "song": "Todd's Tots",
+    "timing": "22:54",
+    "venue": "Warner Vineyards",
+    "highlighted": true,
+    "notes": "\nSublime downtempo voyage past extrasolar planets and a grand, emotional ending to the jam. \n"
   }
 ]
