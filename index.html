@@ -2207,18 +2207,19 @@ function processShowsDatabase() {
         lastPlayed: song.lastPlayed,
       };
     } else {
+      // Append all performance dates from this variant. Do NOT dedupe — a song
+      // played multiple times in one show legitimately counts multiple times.
       merged[key].performances.push(...song.performances);
-      const allDates = merged[key].performances.map(p => {
-        const dateStr = typeof p === 'string' ? p : p.date;
-        return dateStr ? dateStr.trim().split('/')[0] : dateStr;
-      });
-      merged[key].performances = [...new Set(allDates)].sort(
-        (a, b) => new Date(a) - new Date(b)
-      );
-      
+      merged[key].performances = merged[key].performances
+        .map(p => {
+          const dateStr = typeof p === 'string' ? p : p.date;
+          return dateStr ? dateStr.trim().split('/')[0] : dateStr;
+        })
+        .sort((a, b) => new Date(a) - new Date(b));
+
       const cleanFirstPlayed = song.firstPlayed.includes('/') ? song.firstPlayed.split('/')[0].trim() : song.firstPlayed;
       const cleanLastPlayed = song.lastPlayed.includes('/') ? song.lastPlayed.split('/')[0].trim() : song.lastPlayed;
-      
+
       if (new Date(cleanFirstPlayed) < new Date(merged[key].firstPlayed))
         merged[key].firstPlayed = cleanFirstPlayed;
       if (new Date(cleanLastPlayed) > new Date(merged[key].lastPlayed))
@@ -2943,9 +2944,9 @@ function renderLocationShowsTable(shows, title, type, value) {
       const prevIndex = dbDates.indexOf(prevDate);
       
       if (currentIndex !== -1 && prevIndex !== -1) {
-        gap = currentIndex - prevIndex - 1;
-        
-        // Calculate days gap
+        // Gap = shows since previous (same show = 0, next consecutive = 1).
+        gap = Math.max(0, currentIndex - prevIndex);
+
         const currentDate = new Date(date);
         const prevDateObj = new Date(prevDate);
         const timeDiff = currentDate - prevDateObj;
@@ -3459,43 +3460,37 @@ function renderSongDetailTable() {
               standardizedSetName = setName.replace('set', 'Set ');
             }
             
-            // Calculate gap from previous performance
+            // Gap = number of shows since last performance:
+            //   same show => 0, next consecutive show => 1, etc.
             let gap = '-';
             if (dateIndex === 0 && performances.length === 0) {
-              // First ever performance - calculate shows from beginning
+              // First ever performance — gap from the very first show in the db.
               let currentDateIndex = dbDates.indexOf(showKey);
               if (currentDateIndex === -1) {
-                // If not found, try to find the position by date comparison
                 currentDateIndex = dbDates.findIndex(d => new Date(d.split('/')[0]) >= new Date(baseDate));
               }
               gap = currentDateIndex >= 0 ? currentDateIndex : 0;
             } else if (performances.length > 0) {
-              // Get the previous performance's show key
               const prevPerformance = performances[performances.length - 1];
               const prevShowKey = prevPerformance.showKey;
-              
-              // Only show gap if this is a different show than previous
+
               if (showKey !== prevShowKey) {
                 let currentDateIndex = dbDates.indexOf(showKey);
                 let prevDateIndex = dbDates.indexOf(prevShowKey);
-                
-                // If exact keys not found, find closest matches
+
                 if (currentDateIndex === -1 || prevDateIndex === -1) {
-                  // Fallback: calculate by date comparison
-                  const currentDate = new Date(baseDate);
-                  const prevDate = new Date(prevPerformance.baseDate);
                   const allSortedDates = [...new Set(dbDates.map(d => d.split('/')[0]))].sort((a, b) => new Date(a) - new Date(b));
                   const currentSortedIndex = allSortedDates.indexOf(baseDate);
                   const prevSortedIndex = allSortedDates.indexOf(prevPerformance.baseDate);
-                  
+
                   if (currentSortedIndex !== -1 && prevSortedIndex !== -1) {
-                    gap = Math.max(0, currentSortedIndex - prevSortedIndex - 1);
+                    gap = Math.max(0, currentSortedIndex - prevSortedIndex);
                   }
                 } else {
-                  gap = Math.max(0, currentDateIndex - prevDateIndex - 1);
+                  gap = Math.max(0, currentDateIndex - prevDateIndex);
                 }
               } else {
-                gap = ''; // Same show as previous performance, no gap
+                gap = 0; // Same show as previous performance
               }
             }
             
@@ -3536,8 +3531,8 @@ function renderSongDetailTable() {
       const vb = (b.show.venue || '').toLowerCase();
       result = va < vb ? -1 : va > vb ? 1 : 0;
     } else if (sort.column === 'gap') {
-      const va = (a.gap === '-' || a.gap === '') ? -1 : parseInt(a.gap);
-      const vb = (b.gap === '-' || b.gap === '') ? -1 : parseInt(b.gap);
+      const va = (a.gap === '-' || a.gap === '') ? -1 : Number(a.gap);
+      const vb = (b.gap === '-' || b.gap === '') ? -1 : Number(b.gap);
       result = va - vb;
     } else if (sort.column === 'set') {
       const setOrder = {'Set 1': 1, 'Set 2': 2, 'Set 3': 3, 'Encore': 4};
@@ -3577,29 +3572,62 @@ function renderSongDetailTable() {
     return false;
   });
   
-  // Deduplicate: keep only as many rows per show as there are jam entries for that date (min 1)
-  const jamCountByDate = {};
+  // Render each performance
+  // (No per-show dedup: if a song appears multiple times in a single show — e.g.
+  //  "ETS -> Tequila -> ETS" or "Weasel ... Weasel" — each occurrence is a
+  //  distinct performance and gets its own row.)
+
+  // Pre-assign jam entries to performances by occurrence so two rows on the
+  // same date don't share the same jam entry.
+  const _toYMD = d => {
+    if (!d) return '';
+    const s = String(d).split('/')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    if (/^\d{2}-\d{2}-\d{4}$/.test(s)) { const [m, dd, y] = s.split('-'); return `${y}-${m}-${dd}`; }
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) { const [m, dd, y] = s.split('/'); return `${y}-${m}-${dd}`; }
+    return s;
+  };
+  const _setOrder = { 'Set 1': 1, 'Set 2': 2, 'Set 3': 3, 'Encore': 4 };
+  const perfsByDate = {};
+  performances.forEach(p => { (perfsByDate[p.baseDate] = perfsByDate[p.baseDate] || []).push(p); });
+  const jamsByDate = {};
   jamsForSong.forEach(j => {
-    jamCountByDate[j.date] = (jamCountByDate[j.date] || 0) + 1;
+    const ymd = _toYMD(j.dbDate || j.date);
+    if (ymd) (jamsByDate[ymd] = jamsByDate[ymd] || []).push(j);
   });
-  const seenShowCounts = {};
-  performances = performances.filter(perf => {
-    seenShowCounts[perf.baseDate] = (seenShowCounts[perf.baseDate] || 0) + 1;
-    return seenShowCounts[perf.baseDate] <= Math.max(jamCountByDate[perf.baseDate] || 0, 1);
+  const perfJamMap = new Map();
+  Object.entries(perfsByDate).forEach(([date, perfs]) => {
+    const jams = jamsByDate[date] || [];
+    if (!jams.length) return;
+    const ordered = [...perfs].sort((a, b) => {
+      const so = (_setOrder[a.setName] || 5) - (_setOrder[b.setName] || 5);
+      return so !== 0 ? so : a.position - b.position;
+    });
+    const usedIdx = new Set();
+    // Pass 1: explicit occurrence tag (1-indexed) wins
+    jams.forEach(jam => {
+      if (!jam.occurrence) return;
+      const idx = jam.occurrence - 1;
+      if (idx >= 0 && idx < ordered.length && !usedIdx.has(idx)) {
+        perfJamMap.set(ordered[idx], jam);
+        usedIdx.add(idx);
+      }
+    });
+    // Pass 2: assign remaining jams to next unused occurrence in order
+    jams.forEach(jam => {
+      if (jam.occurrence) return;
+      for (let i = 0; i < ordered.length; i++) {
+        if (!usedIdx.has(i) && !perfJamMap.has(ordered[i])) {
+          perfJamMap.set(ordered[i], jam);
+          usedIdx.add(i);
+          break;
+        }
+      }
+    });
   });
 
-  // Render each performance
   performances.forEach(perf => {
-    const jamEntry = jamsForSong.find(j => {
-      const jamDate = j.date;
-      const formattedJamDate = formatDateForDisplay(jamDate);
-      const perfBaseDate = perf.baseDate;
-      
-      return jamDate === perfBaseDate || 
-             formattedJamDate === perfBaseDate ||
-             formatDateForDisplay(perfBaseDate) === jamDate ||
-             formatDateForDisplay(perfBaseDate) === formattedJamDate;
-    });
+    const jamEntry = perfJamMap.get(perf);
     
     const isHighlighted = jamEntry?.highlighted;
     const notes = jamEntry?.notes || '-';
@@ -3879,9 +3907,9 @@ document.addEventListener('DOMContentLoaded', function() {
             };
           }
 
-          // push baseDate for display but keep reference to fullKey internally
+          // push baseDate for display — do NOT dedupe; a song played multiple
+          // times in one show legitimately counts multiple times.
           songs[norm].performances.push(baseDate);
-          songs[norm].performances = [...new Set(songs[norm].performances)];
 
           if (new Date(baseDate) < new Date(songs[norm].firstPlayed))
             songs[norm].firstPlayed = baseDate;
@@ -3900,10 +3928,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!merged[key]) {
       merged[key] = { ...song };
     } else {
+      // Append all dates without dedup so multi-occurrence shows count correctly.
       merged[key].performances.push(...song.performances);
-      merged[key].performances = [...new Set(merged[key].performances)].sort(
-        (a, b) => new Date(a) - new Date(b)
-      );
+      merged[key].performances.sort((a, b) => new Date(a) - new Date(b));
       if (new Date(song.firstPlayed) < new Date(merged[key].firstPlayed))
         merged[key].firstPlayed = song.firstPlayed;
       if (new Date(song.lastPlayed) > new Date(merged[key].lastPlayed))
