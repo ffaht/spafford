@@ -596,7 +596,7 @@
     "song": "Swingtown",
     "timing": "14:33",
     "venue": "The Public House",
-    "notes": "\nDebut. Feel good, type 1 jam that bobs and rocks with awesome Shon throughout.\n"
+    "notes": "\nSpafford debut. Feel good, type 1 jam that bobs and rocks with awesome Shon throughout.\n"
   },
   {
     "date": "2025-03-12",
@@ -4901,5 +4901,35 @@
     "timing": "8:34",
     "venue": "HI-FI Indy",
     "notes": "\nGrand in nature, with hints of Todd's Tots and Weasel peeking through.\n"
+  },
+  {
+    "date": "2026-06-21",
+    "song": "Dirtbath",
+    "timing": "30:23",
+    "venue": "Woodlands Tavern",
+    "highlighted": true,
+    "notes": "\nBootsy Collins x Luther Vandross grooving and a ferocious final third! Shon and Cory throw down, then Brian demolishes!\n"
+  },
+  {
+    "date": "2026-06-21",
+    "song": "Down Under",
+    "timing": "15:28",
+    "venue": "Woodlands Tavern",
+    "highlighted": true,
+    "notes": "\nStrands of electro-industrial components that weave amongst each other. \n"
+  },
+  {
+    "date": "2026-06-21",
+    "song": "Enjoy the Silence",
+    "timing": "15:39",
+    "venue": "Woodlands Tavern",
+    "notes": "\nTakes flight over Wuhu Island for an unusually ethereal, soaring second half. \n"
+  },
+  {
+    "date": "2026-06-21",
+    "song": "Spunkadelic",
+    "timing": "17:18",
+    "venue": "Woodlands Tavern",
+    "notes": "\nFinds itself in a bubbling cosmopolitan rave that breaks for a customary rocking close.\n"
   }
 ]
