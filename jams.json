@@ -5028,5 +5028,36 @@
     "timing": "10:25",
     "venue": "Vinoski Winery",
     "notes": "\nForages for half-rendered blocks of jelly earth and laser-synth cuts through the rocky edge of a neo-futuristic civilization. \n"
+  },
+  {
+    "date": "2026-06-26",
+    "song": "Ain't That Wrong",
+    "timing": "21:42",
+    "venue": "The Get Down Festival",
+    "notes": "\n1970s Afro-Funk blooms into a full-blown rave.\n"
+  },
+  {
+    "date": "2026-06-26",
+    "song": "Darkness Singularity",
+    "timing": "15:47",
+    "venue": "The Get Down Festival",
+    "notes": "\nHatches over Triassic Pangea, taking formative synthpop steps before breaking into a customary stride. \n"
+  },
+  {
+    "date": "2026-06-26",
+    "song": "Electric Taco Stand",
+    "timing": "17:41",
+    "venue": "The Get Down Festival",
+    "highlighted": true,
+    "notes": "\nLate night sub-aquatic grooving goes synth mode for some speedy and kinetic exploration. \n",
+    "occurrence": 1
+  },
+  {
+    "date": "2026-06-26",
+    "song": "Money for Nothing",
+    "timing": "19:55",
+    "venue": "The Get Down Festival",
+    "highlighted": true,
+    "notes": "\nFalls through a dreamscape and glides above a grid of geysers and volcanoes, with twilight triggering a test of colorful micro-eruptions -> ETS.\n"
   }
 ]
