@@ -13275,21 +13275,24 @@
     "date": "2013-07-26"
   },
   "2013-07-22": {
-    "url": "https://spaffnerds.com/shows/2013-07-22",
-    "venue": "Quixote's True Blue",
+    "date": "2013-07-22",
+    "venue": "Unknown Venue",
     "city": "Denver",
     "state": "CO",
+    "tour": "-",
+    "show_number": "venue: Quixote's",
+    "rating": "",
+    "chucks_dream": "rating:",
     "sets": {
-      "Set 1": "Walls > America [ 1 ] > The Reprise > All My Friends > Bee Jam > Leave The Light On,, People",
-      "Set 2": "People,, Weasel,, Electric Taco Stand,, On Fire [ 2 ],, Ain't That Wrong [ 3 ],, Send Me On My Way"
+      "Set 1": "Walls (18), America (8) > The Reprise (8), All My Friends (5) -> Bee Jam (6), Leave the Light On (14)",
+      "Set 2": "People (9), Weasel (22), Electric Taco Stand (11), On Fire (20) -> Ain't That Wrong (1), Send Me on My Way (12)"
     },
     "notes": [
-      "[ 1 ]: Phish - First Tube tease (Brian)",
-      "[ 2 ]: Backdoor Funk tease (Red)",
-      "[ 3 ]: Ending"
+      "*This was the 25th show of 2013 and the third show of a three show (over four days) run at Quixote's. **Walls** contained the original intro and lyrics. **America** contained First Tube (Phish) teases from Jordan and Brian.*"
     ],
-    "source": "spaffnerds",
-    "date": "2013-07-22"
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\Other\\2013-07-22.md",
+    "url": "https://spaffnerds.com/shows/2013-07-22"
   },
   "2013-07-20": {
     "url": "https://spaffnerds.com/shows/2013-07-20",
@@ -16194,6 +16197,28 @@
     ],
     "source": "obsidian",
     "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2026\\2026-06-27.md",
+    "url": ""
+  },
+  "2026-07-08": {
+    "date": "2026-07-08",
+    "venue": "3S Artspace",
+    "city": "Portsmouth",
+    "state": "NH",
+    "tour": "2026 Summer",
+    "show_number": "12",
+    "rating": "tags:",
+    "chucks_dream": "Time Machine",
+    "sets": {
+      "Set 1": "Comfortable (21) -> Night After Night (12), A Union Divine (4), The Remedy (18), Darkness Singularity (13)",
+      "Chuck's Dream": "Time Machine",
+      "Set 2": "Peaches (23) -> Electric Taco Stand (18), Motel 6 (16), Double Time (15)",
+      "Encore": "Space Gadget (4)"
+    },
+    "notes": [
+      "*This was the 12th show of the 2026 Summer Tour and the band's first appearance at 3S Artspace. **The Remedy** contained several My Name is McLovin samples from Cory. **Darkness Singularity** contained an On the Run (Pink Floyd) jam. **Peaches** contained Drinking Out of Cups (Dan Deacon) samples from Cory. **Electric Taco Stand** contained a Conga (Miami Sound Machine) tease from Brian. **Motel 6** contained This Is My Route to God (Ram Dass) samples from Cory. Special thanks to 77JjC and tgakidis for taping!*"
+    ],
+    "source": "obsidian",
+    "obsidian_file": "E:\\Obsidian Review Vault\\Reviews\\Spafford\\Setlists\\2026\\2026-07-08.md",
     "url": ""
   }
 }
