@@ -5348,7 +5348,7 @@
     "song": "Money for Nothing",
     "timing": "20:35",
     "venue": "The Cutting Room",
-    "notes": "\nCoasts around a cantaloupe island, gaining an ominous, electronic wake that flutters into low key, feel good space.\n"
+    "notes": "\nCoasts around a cantaloupe island, gaining an ominous, electronic wake that flutters into low-key, feel-good space.\n"
   },
   {
     "date": "2026-07-24",
@@ -5356,5 +5356,21 @@
     "timing": "23:30",
     "venue": "The Cutting Room",
     "notes": "\nWishy-washy, back and forth cycling that speeds through a (very!) funky phase before closing with Floydian blues that Brian shreds toward a peak. \n"
+  },
+  {
+    "date": "2026-07-25",
+    "song": "America",
+    "timing": "12:16",
+    "venue": "The Cutting Room",
+    "notes": "\n5:31 Holy Shit LMAO \n"
+  },
+  {
+    "date": "2026-07-25",
+    "song": "Down Under",
+    "timing": "20:49",
+    "venue": "The Cutting Room",
+    "highlighted": true,
+    "notes": "\nInteresting last few minutes that feature sampling and electronic work before deconstructing -> High Beams. The jam itself may fly under the radar, but touches on a handful of different themes in egalitarian fashion, with a notably bright build and booming Shon throughout.\n",
+    "occurrence": 1
   }
 ]
