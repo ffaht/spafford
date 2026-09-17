@@ -1965,7 +1965,7 @@
     "timing": "17:01",
     "venue": "HI-FI Indy",
     "highlighted": true,
-    "notes": "\nQuickly drops into a smoke-filled underwater Matrix in a second story basement and breaks out to fiercely bright skies before finding its way to a slinking, Echoes-y groove that fades and goes -> Double Time.\n"
+    "notes": "\nQuickly drops into a smoke-filled underwater second story basement and breaks out to fiercely bright skies before finding its way to a slinking, Echoes-y groove that fades and goes -> Double Time.\n"
   },
   {
     "date": "2025-08-06",
@@ -2231,7 +2231,7 @@
     "timing": "20:59",
     "venue": "The Annex",
     "highlighted": true,
-    "notes": "\nA determined groove pops up instantly, diving into an underwater matrix in a second story basement that opens into a rave. Huge buildup around 12:00, followed by fluttery, feel good playing that bursts with pride > Salamander Song. \n"
+    "notes": "\nA determined groove pops up instantly, diving into an second story basement in an underwater matrix that opens into a rave. Huge buildup around 12:00, followed by fluttery, feel good playing that bursts with pride > Salamander Song. \n"
   },
   {
     "date": "2025-08-26",
@@ -3160,7 +3160,7 @@
     "timing": "25:14",
     "venue": "Summit Music Hall",
     "highlighted": true,
-    "notes": "Bibbles with opaque shades of vibrant colors before dipping into a matrix inside of a second-story basement, with trails of electricity leaving glowing traces behind as it builds and peaks fiercely, then drops into swingy territory that barrels straight into -> Armageddon."
+    "notes": "\nBibbles with opaque shades of vibrant colors before dipping into a second story basement within a matrix, with trails of electricity leaving glowing traces behind as it builds and peaks fiercely, then drops into swingy territory that barrels straight into -> Armageddon.\n"
   },
   {
     "date": "2025-11-21",
@@ -5644,5 +5644,57 @@
     "timing": "20:56",
     "venue": "Camp Scampi",
     "notes": "\nEnchanting 80s grooving.\n"
+  },
+  {
+    "date": "2026-09-15",
+    "song": "Ain't That Wrong",
+    "timing": "15:44",
+    "venue": "The Commonwealth Room",
+    "notes": "\nSlows into a metropolitan haze.\n"
+  },
+  {
+    "date": "2026-09-15",
+    "song": "Broken Wing",
+    "timing": "33:59",
+    "venue": "The Commonwealth Room",
+    "notes": "\nStreaks across space as an unmanned ship, leaving behind a trail of feel-good, gooey bubbles before touching down on a mesan planet where it grooves -> ETS.\n"
+  },
+  {
+    "date": "2026-09-15",
+    "song": "Dream Jam",
+    "timing": "19:28",
+    "venue": "The Commonwealth Room",
+    "highlighted": true,
+    "notes": "\nDescends onto Rockwellian plains, with happy bass, snappy drums, and plucky guitar leading the way toward misty, electrified repurposed quarries.\n"
+  },
+  {
+    "date": "2026-09-15",
+    "song": "Electric Taco Stand",
+    "timing": "15:54",
+    "venue": "The Commonwealth Room",
+    "highlighted": true,
+    "notes": "\nSlips into a second story basement in an underwater matrix and blooms into an electronic chase.\n"
+  },
+  {
+    "date": "2026-09-15",
+    "song": "Fake the Fate",
+    "timing": "14:29",
+    "venue": "The Commonwealth Room",
+    "highlighted": true,
+    "notes": "\nAn unusual bass solo (with a similar feel to Shu Ba Da Du Ma Ma Ma Ma) to start the jam that gets heavier as they stretch and rotate into an intergalactic ocean that zaps -> Soggy Froggy. \n"
+  },
+  {
+    "date": "2026-09-15",
+    "song": "High Beams",
+    "timing": "5:50",
+    "venue": "The Commonwealth Room",
+    "notes": "\nOrgan-driven Afrobeat.\n"
+  },
+  {
+    "date": "2026-09-15",
+    "song": "Todd's Tots",
+    "timing": "24:05",
+    "venue": "The Commonwealth Room",
+    "notes": "\nSinks into a downtempo groove and rotates as a shimmering, colorful, orchestral windmill for a rich build. Jazzy ending, too. \n"
   }
 ]
