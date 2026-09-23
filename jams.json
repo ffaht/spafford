@@ -5824,6 +5824,7 @@
     "song": "Motel 6",
     "timing": "16:20",
     "venue": "The Den",
+    "highlighted": true,
     "notes": "\nGrooves through nocturnal city streets as a terrestrial submarine, building a neural network of blinking, glimmering lights that bubble together to briefly transcend consciousness and fall back for a bluesy, gloomy stroll > Windmill. \n"
   },
   {
@@ -5861,5 +5862,64 @@
     "timing": "24:18",
     "venue": "The Den",
     "notes": "\nGorgeous first jam that glides down selenite waterfalls and a speedy second jam that Cory surfs with sharp organ before collectively calming -> Motel 6's ending.\n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Back in L.A.",
+    "timing": "22:43",
+    "venue": "The Den",
+    "notes": "\nSurprising, soaring close to the jam.\n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Double Time",
+    "timing": "17:59",
+    "venue": "The Den",
+    "notes": "\nAn off-kilter introduction and left-field grittiness before getting into the jam, which speeds through video game raceways and fold mountains, peaking with Gatling gun Jersey Moss mode Brian.\n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Gotta Save Fred",
+    "timing": "12:03",
+    "venue": "The Den",
+    "notes": "\nHeated first few minutes that slide into a dreamscape and build -> Cantaloupe Island.\n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Musette",
+    "timing": "3:09",
+    "venue": "The Den",
+    "highlighted": true,
+    "notes": "\nIn perfectly from Dissociation Assist, this one quickly reaches fantastic heights and flips seamlessly -> Space Gadget.\n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Pursuit of Madness",
+    "timing": "22:28",
+    "venue": "The Den",
+    "highlighted": true,
+    "notes": "\nSparse, subdued opening that spreads its wings with piercing guitar and slips into simplistic, echoing grooving that matures into glimmering, sample-ridden synthpop before twanging its way -> Salamander Song\n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Smooth, Relax, Down",
+    "timing": "4:35",
+    "venue": "The Den",
+    "notes": "\nQuite interesting inflections from everyone. \n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Space Gadget",
+    "timing": "4:42",
+    "venue": "The Den",
+    "highlighted": true,
+    "notes": "\nPacks the Dissociation Assist -> Musette -> Space Gadget -> Walls \"sandwich\" and keeps the surprises going with a shrieking peak and another clean transition -> Walls.\n"
+  },
+  {
+    "date": "2026-09-20",
+    "song": "Walls",
+    "timing": "21:04",
+    "venue": "The Den",
+    "notes": "\nSwims through Soggy Froggy marshlands and into loud Andean livetronica before building with the main theme toward a huge ending.\n"
   }
 ]
