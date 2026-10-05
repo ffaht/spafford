@@ -6108,5 +6108,28 @@
     "timing": "21:46",
     "venue": "Felton Music Hall",
     "notes": "\nGlides through pink and blue opalescent crystal clouds for a resplendent jam.\n"
+  },
+  {
+    "date": "2026-09-29",
+    "song": "Duncan's Uncle",
+    "timing": "9:39",
+    "venue": "Sweetwater Music Hall",
+    "notes": "\nVeers in from an extended, groovy High Beams to close out the Duncan's sandwich with tenacity.\n",
+    "occurrence": 2
+  },
+  {
+    "date": "2026-09-29",
+    "song": "Duncan's Uncle",
+    "timing": "17:42",
+    "venue": "Sweetwater Music Hall",
+    "notes": "\nCentrifugal funk that flows -> High Beams.\n",
+    "occurrence": 1
+  },
+  {
+    "date": "2026-09-29",
+    "song": "High Beams",
+    "timing": "14:08",
+    "venue": "Sweetwater Music Hall",
+    "notes": "\nTasty, Shon-led groove that steams along waterways and morphs cleanly -> Duncan's Uncle to complete the Duncan's -> High Beams -> Duncan's sandwich.\n"
   }
 ]
