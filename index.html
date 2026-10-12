@@ -22,8 +22,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .site-header p{color:var(--muted-color);}
 .site-disclaimer{font-size:0.85rem;font-style:italic;margin-top:0.5rem;}
 .search-container{display:flex;gap:1rem;margin-bottom:2rem;align-items:center;}
-#search-input{flex:1;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
-#filter-select{padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);}
+#search-input{flex:1 1 140px;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
+#filter-select{flex:1 1 140px;min-width:140px;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);}
+.song-combo{position:relative;flex:1 1 140px;min-width:140px;}
+#song-select{width:100%;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
+.song-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:300px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;z-index:1200;box-shadow:0 8px 24px rgba(0,0,0,0.45);}
+.song-menu-item{display:flex;justify-content:space-between;gap:0.75rem;padding:0.5rem 0.75rem;cursor:pointer;font-size:0.9rem;color:var(--text-color);}
+.song-menu-item:hover,.song-menu-item.active{background:#1e1e1e;color:var(--yellow);}
+.song-menu-count{color:var(--muted-color);}
+.song-menu-empty{padding:0.6rem 0.75rem;color:var(--muted-color);font-size:0.85rem;}
 .search-container input[type="text"]{flex:1;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);font-size:1rem;}
 .jam-table-container{background:var(--card-bg);border-radius:8px;border:1px solid var(--border-color);overflow-x:auto;}
 .jam-table{width:100%;border-collapse:collapse;font-size:0.9rem;}
@@ -274,16 +281,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <main class="container">
 <main class="container">
 <div id="page-jams" class="page-content" style="display:none;">
-<div class="search-container">
-<input type="text" id="search-input" placeholder="Search songs, locations, dates..." onkeyup="renderFilteredJams()">
+<div class="search-container" style="flex-wrap:wrap;">
+<input type="text" id="search-input" placeholder="Search" oninput="onJamSearchInput()">
+<div class="song-combo">
+<input type="text" id="song-select" placeholder="Song" autocomplete="off" spellcheck="false" oninput="onJamSongInput()" onfocus="onJamSongFocus()" onclick="onJamSongFocus()" onkeydown="onJamSongKeydown(event)" onblur="renderJamSongMenu(false)">
+<div id="jam-song-menu" class="song-menu" style="display:none;"></div>
+</div>
 <select id="filter-select" onchange="renderFilteredJams()">
   <option value="all">All Jams</option>
   <option value="highlighted">Highlighted</option>
 </select>
 </div>
 <div id="jam-year-filter" style="display:flex;gap:0.5rem;margin:0.75rem 0 1rem 0;flex-wrap:wrap;">
+  <button type="button" class="tab-button jam-year-btn active" data-year="" onclick="setJamYear('')">All Years</button>
   <button type="button" class="tab-button jam-year-btn" data-year="2025" onclick="setJamYear('2025')">2025</button>
-  <button type="button" class="tab-button jam-year-btn active" data-year="2026" onclick="setJamYear('2026')">2026</button>
+  <button type="button" class="tab-button jam-year-btn" data-year="2026" onclick="setJamYear('2026')">2026</button>
 </div>
 <div class="jam-table-container">
 <table class="jam-table">
@@ -467,7 +479,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 // JAM CHART CODE
 let allJams = [];
 let currentSort = {column:'date',direction:'desc'};
-let selectedJamYear = '2026';
+let selectedJamYear = ''; // '' = all years
 const tableBody = document.getElementById('jam-table-body');
 
 function setJamYear(year) {
@@ -479,6 +491,7 @@ function setJamYear(year) {
   document.querySelectorAll('[id$="-sort"]').forEach(ind => ind.textContent = '');
   const dateInd = document.getElementById('date-sort');
   if (dateInd) dateInd.textContent = '▼';
+  // Keep any chosen song / search text; the year just narrows what's shown.
   renderFilteredJams();
 }
 
@@ -524,7 +537,7 @@ function normalizeSongName(s) {
   // Clean general junk and lowercase
   s = s
     .replace(/\s*\[\s*\d+[\d:]*\s*\]\s*/g, "")
-    .replace(/\s*\(\s*[\d:\-]+\s*\)\s*/g, "")
+    .replace(/\s*\(\s*[\d:\-?]+\s*\)\s*/g, "")
     .replace(/[|]+/g, " ")
     .replace(/[^\w\s,()'-]/g, "")
     .replace(/'/g, "")  // REMOVE APOSTROPHES for consistent matching
@@ -760,6 +773,7 @@ try {
 } catch (e) {
   console.log('Error getting location for', entry.date, e);
 }
+entry.locationText = locationText; // exactly what the Location column displays
 
 tr.innerHTML = `
   <td><span class="date-link" data-date="${entry.date}" style="cursor: pointer; color: var(--text-color);">${formatDateForDisplay(entry.date)}</span></td>
@@ -775,17 +789,14 @@ tr.innerHTML = `
     
     allJams = processedJams;
 
-    // Pick the most-recent year that actually has jam data as the default filter
+    // Show every year by default; the year tabs narrow it if the user wants.
     const yearsPresent = Array.from(new Set(allJams.map(j => getJamYear(j)).filter(Boolean))).sort();
-    if (yearsPresent.length) {
-      const newestYear = yearsPresent[yearsPresent.length - 1];
-      if (!yearsPresent.includes(selectedJamYear)) {
-        selectedJamYear = newestYear;
-        document.querySelectorAll('.jam-year-btn').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.year === selectedJamYear);
-        });
-      }
+    if (selectedJamYear && !yearsPresent.includes(selectedJamYear)) {
+      selectedJamYear = yearsPresent.length ? yearsPresent[yearsPresent.length - 1] : '';
     }
+    document.querySelectorAll('.jam-year-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.year === selectedJamYear);
+    });
 
     // HARDCODE 2025-01-17 order
     const jan17Order = [
@@ -829,13 +840,164 @@ tr.innerHTML = `
   });
 }
 
+// --- Song entry: a searchable, autofilling box over every song's all-time jam
+// entry count. Typing filters both the suggestion list and the table; picking a
+// suggestion fills in the exact title. ---
+function getJamSongCounts() {
+  const counts = new Map(); // normalized song -> { display, count }
+  allJams.forEach(j => {
+    const norm = normalizeSongName(j.song);
+    if (!norm) return;
+    const entry = counts.get(norm);
+    if (entry) {
+      entry.count++;
+      if (j.song.length < entry.display.length) entry.display = j.song;
+    } else {
+      counts.set(norm, { display: j.song, count: 1 });
+    }
+  });
+  return counts;
+}
+
+let _jamSongMenuIndex = -1;
+let _jamSongMenuShowAll = false;
+
+function songMenuEntries() {
+  const entries = Array.from(getJamSongCounts().values())
+    .sort((a, b) => (a.display.toLowerCase() < b.display.toLowerCase() ? -1 : 1));
+
+  // Clicking into the box re-offers the full list so a song can be swapped
+  // without deleting the current one first.
+  if (_jamSongMenuShowAll) return entries;
+
+  const songQuery = normalizeSongName((document.getElementById('song-select')?.value || '').trim());
+  if (songQuery) {
+    return entries.filter(e => normalizeSongName(e.display).includes(songQuery));
+  }
+
+  // With the Song box empty, let the general Search box narrow the suggestions.
+  const general = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+  if (general) {
+    const narrowed = entries.filter(e =>
+      normalizeSongName(e.display).includes(normalizeSongName(general)) ||
+      e.display.toLowerCase().includes(general));
+    if (narrowed.length) return narrowed; // else fall back to the full list
+  }
+  return entries;
+}
+
+function renderJamSongMenu(open) {
+  const menu = document.getElementById('jam-song-menu');
+  if (!menu) return;
+  if (!open) { menu.style.display = 'none'; _jamSongMenuIndex = -1; _jamSongMenuShowAll = false; return; }
+
+  const entries = songMenuEntries();
+  menu.innerHTML = '';
+  if (!entries.length) {
+    const empty = document.createElement('div');
+    empty.className = 'song-menu-empty';
+    empty.textContent = 'No songs match';
+    menu.appendChild(empty);
+  } else {
+    if (_jamSongMenuIndex >= entries.length) _jamSongMenuIndex = entries.length - 1;
+    entries.forEach((e, i) => {
+      const item = document.createElement('div');
+      item.className = 'song-menu-item' + (i === _jamSongMenuIndex ? ' active' : '');
+      item.dataset.song = e.display;
+      const name = document.createElement('span');
+      name.textContent = e.display;
+      const count = document.createElement('span');
+      count.className = 'song-menu-count';
+      count.textContent = `(${e.count})`;
+      item.appendChild(name);
+      item.appendChild(count);
+      menu.appendChild(item);
+    });
+  }
+  menu.style.display = 'block';
+}
+
+function onJamSearchInput() {
+  renderFilteredJams();
+  const menu = document.getElementById('jam-song-menu');
+  if (menu && menu.style.display !== 'none') renderJamSongMenu(true);
+}
+
+function onJamSongInput() {
+  _jamSongMenuShowAll = false;
+  _jamSongMenuIndex = -1;
+  renderJamSongMenu(true);
+  renderFilteredJams();
+}
+
+// Focus / click on the Song box: highlight the whole entry so typing replaces
+// it, and offer every song again so you can run through the selections.
+function onJamSongFocus() {
+  const input = document.getElementById('song-select');
+  _jamSongMenuShowAll = true;
+  _jamSongMenuIndex = -1;
+  renderJamSongMenu(true);
+  // Select the whole entry once the browser has placed the caret, so clicking a
+  // filled box lets you replace the song instead of deleting it by hand.
+  if (input && input.value) {
+    setTimeout(() => { if (document.activeElement === input) input.select(); }, 0);
+  }
+}
+
+function onJamSongKeydown(e) {
+  const menu = document.getElementById('jam-song-menu');
+  const open = !!(menu && menu.style.display !== 'none');
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!open) { renderJamSongMenu(true); return; }
+    const items = Array.from(menu.querySelectorAll('.song-menu-item'));
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') _jamSongMenuIndex = Math.min(_jamSongMenuIndex + 1, items.length - 1);
+    else _jamSongMenuIndex = Math.max(_jamSongMenuIndex - 1, 0);
+    renderJamSongMenu(true);
+  } else if (e.key === 'Enter') {
+    const items = menu ? Array.from(menu.querySelectorAll('.song-menu-item')) : [];
+    if (open && _jamSongMenuIndex >= 0 && items[_jamSongMenuIndex]) {
+      e.preventDefault();
+      pickJamSong(items[_jamSongMenuIndex].dataset.song);
+    }
+  } else if (e.key === 'Escape') {
+    renderJamSongMenu(false);
+  }
+}
+
+function pickJamSong(title) {
+  const input = document.getElementById('song-select');
+  if (input) input.value = title;
+  _jamSongMenuIndex = -1;
+  renderJamSongMenu(false);
+  renderFilteredJams();
+}
+
+// Keep focus in the box while pressing a suggestion so the list stays up for
+// the click that follows, and close the menu when clicking outside it.
+document.addEventListener('mousedown', e => {
+  if (e.target.closest('#jam-song-menu .song-menu-item')) { e.preventDefault(); return; }
+  if (!e.target.closest('.song-combo')) renderJamSongMenu(false);
+});
+
+// Picking happens on click so a press can never fall through to the table below.
+document.addEventListener('click', e => {
+  const item = e.target.closest('#jam-song-menu .song-menu-item');
+  if (item) pickJamSong(item.dataset.song);
+});
+
 function renderFilteredJams(){
   const searchTerm = document.getElementById('search-input').value.toLowerCase();
   const filterVal = document.getElementById('filter-select').value;
+  const songQuery = normalizeSongName((document.getElementById('song-select')?.value || '').trim());
 
   const filtered = allJams.filter(j=>{
     if(selectedJamYear && getJamYear(j) !== selectedJamYear) return false;
     if(filterVal==='highlighted' && !j.highlighted) return false;
+    // The Song box filters by song name: typing matches partially, and picking a
+    // suggestion fills the exact title (narrowing to that song).
+    if(songQuery && !normalizeSongName(j.song).includes(songQuery)) return false;
     if(!searchTerm) return true;
     // Look up location for search
 let locationText = j.venue; // fallback
@@ -927,6 +1089,11 @@ function sortTable(column){
       };
       va = parseTime(va);
       vb = parseTime(vb);
+    } else if(column==='venue'){
+      // The Location column displays "City, ST", so sort by that rather than by
+      // the hidden venue name (which put e.g. Ziggy's / Greensboro, NC first).
+      va = (a.locationText || a.venue || '').toString().toLowerCase();
+      vb = (b.locationText || b.venue || '').toString().toLowerCase();
     } else {
       va = va.toString().toLowerCase(); 
       vb = vb.toString().toLowerCase();
@@ -2161,7 +2328,7 @@ function processShowsDatabase() {
         let displayName = song.trim()
           .replace(/^[\s|]+/, "")
           .replace(/\s*\[\s*\d+[\d:]*\s*\]\s*/g, "")
-          .replace(/\s*\(\s*[\d:\-]+\s*\)\s*/g, "")
+          .replace(/\s*\(\s*[\d:\-?]+\s*\)\s*/g, "")
           .replace(/[,\s]+$/, "")
           .trim();
           
@@ -2195,8 +2362,11 @@ function processShowsDatabase() {
   });
 
   const merged = {};
-  Object.values(songs).forEach(song => {
-    const key = normalizeSongName(song.name).replace(/[^\w\s]/g, "").trim();
+  // Group by the same normalized key used for lookups. The old
+  // `.replace(/[^\w\s]/g, "")` stripped punctuation, so keys for titles like
+  // "My Road (My Road)" became "my road my road" while every lookup produced
+  // "my road (my road)" — the mismatch left those songs with no history.
+  Object.entries(songs).forEach(([key, song]) => {
     if (!key) return;
 
     if (!merged[key]) {
@@ -3885,7 +4055,7 @@ document.addEventListener('DOMContentLoaded', function() {
           let displayName = song.trim()
             .replace(/^[\s|]+/, "")
             .replace(/\s*\[\s*\d+[\d:]*\s*\]\s*/g, "")
-            .replace(/\s*\(\s*[\d:\-]+\s*\)\s*/g, "")
+            .replace(/\s*\(\s*[\d:\-?]+\s*\)\s*/g, "")
             .replace(/[,\s]+$/, "")
             .trim();
 
@@ -3921,8 +4091,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Merge duplicates
   const merged = {};
-  Object.values(songs).forEach(song => {
-    const key = normalizeSongName(song.name).replace(/[^\w\s]/g, "").trim();
+  // Group by the same normalized key used for lookups. The old
+  // `.replace(/[^\w\s]/g, "")` stripped punctuation, so keys for titles like
+  // "My Road (My Road)" became "my road my road" while every lookup produced
+  // "my road (my road)" — the mismatch left those songs with no history.
+  Object.entries(songs).forEach(([key, song]) => {
     if (!key) return;
 
     if (!merged[key]) {
